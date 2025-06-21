@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mon site éducatif</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <header>
+      <div class="logo">MonSite</div>
+      <nav class="nav-matieres">
+        {% for matiere in matieres %}
+        <a href="{{ url_for('afficher_themes', matiere_id=matiere['_id']) }}">
+          {{ matiere['nom'] }}
+        </a>
+        {% endfor %}
+      </nav>
+      <div class="auth">
+        {% if session.get("admin") %}
+        <span class="welcome-msg"
+          >Bienvenue Admin {{ session.get("username") }}</span
+        >
+        <a href="{{ url_for('admin.admin_home') }}">Panneau admin</a>
+        <a href="{{ url_for('auth.logout') }}">Se déconnecter</a>
+        {% elif session.get("username") %}
+        <span class="welcome-msg">Bienvenue {{ session.get("username") }}</span>
+        <a href="{{ url_for('auth.logout') }}">Se déconnecter</a>
+        {% else %}
+        <a href="{{ url_for('auth.login') }}">Se connecter</a>
+        <a href="{{ url_for('auth.register') }}">Créer un compte</a>
+        {% endif %}
+      </div>
+    </header>
+
+    <main>
+      {% block content %} {% with messages = get_flashed_messages() %} {% if
+      messages %}
+      <ul class="flashes">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %} {% endwith %} {% endblock %}
+    </main>
+    <script src="{{ url_for('static', filename='js/confirmations.js') }}"></script>
+  </body>
+</html>

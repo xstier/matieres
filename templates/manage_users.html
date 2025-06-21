@@ -1,0 +1,56 @@
+<h1>Gestion des utilisateurs</h1>
+
+{% if message %}
+<p style="color: green">{{ message }}</p>
+{% endif %}
+
+<table border="1" cellpadding="8">
+  <thead>
+    <tr>
+      <th>Nom</th>
+      <th>Nom d'utilisateur</th>
+      <th>Rôle</th>
+      <th>Date création</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user in users %}
+    <tr>
+      <td>{{ user.name }}</td>
+      <td>{{ user.username }}</td>
+      <td>{{ user.role }}</td>
+      <td>
+        {{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else
+        '–' }}
+      </td>
+      <td>
+        <form method="POST" style="display: inline">
+          <input type="hidden" name="user_id" value="{{ user._id }}" />
+          <input type="hidden" name="action" value="toggle_role" />
+          <button type="submit">Changer rôle</button>
+        </form>
+        <form
+          method="POST"
+          style="display: inline"
+          onsubmit="return confirm('Supprimer cet utilisateur ?')"
+        >
+          <input type="hidden" name="user_id" value="{{ user._id }}" />
+          <input type="hidden" name="action" value="delete" />
+          <button type="submit">Supprimer</button>
+        </form>
+        <form
+          method="POST"
+          style="display: inline"
+          onsubmit="return confirm('Réinitialiser le mot de passe ?')"
+        >
+          <input type="hidden" name="user_id" value="{{ user._id }}" />
+          <input type="hidden" name="action" value="reset_password" />
+          <button type="submit">🔑 Réinit. MDP</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="{{ url_for('admin.admin_home') }}">← Retour à l’admin</a>

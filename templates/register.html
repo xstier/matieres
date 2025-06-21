@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Inscription utilisateur</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <h1>Créer un compte</h1>
+
+    {% if message %}
+    <p style="color: green">{{ message }}</p>
+    {% endif %}
+
+    <form method="POST">
+      <input
+        type="text"
+        name="name"
+        placeholder="Votre nom"
+        value="{{name}}"
+        required
+      />
+      <input
+        type="email"
+        name="username"
+        placeholder="Votre email"
+        value="{{username}}"
+        required
+      />
+      <input
+        type="password"
+        name="password"
+        placeholder="Mot de passe"
+        required
+      />
+      {% if session.get("admin") %}
+      <label for="role">Rôle :</label>
+      <select name="role">
+        <option value="user">Utilisateur</option>
+        <option value="admin">Administrateur</option>
+      </select>
+      {% endif %}
+      <button type="submit">S’inscrire</button>
+    </form>
+
+    <a href="{{ url_for('index') }}">⬅ Retour à l’accueil</a>
+  </body>
+</html>

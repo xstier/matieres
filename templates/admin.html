@@ -1,0 +1,64 @@
+{% extends "base.html" %} {% block content %} {% if not session.get("admin") %}
+<form method="POST">
+  <input type="text" name="username" placeholder="Nom d'utilisateur" required />
+  <input type="password" name="password" placeholder="Mot de passe" required />
+  <button type="submit">Connexion</button>
+</form>
+{% else %}
+<h2>Gestion des matières</h2>
+<form method="POST" class="Gestion" action="/add_matiere">
+  <input type="text" name="nom" placeholder="Nouvelle matière" />
+  <button type="submit">Ajouter</button>
+</form>
+<ul>
+  <li>
+    <a href="{{ url_for('admin.add_content') }}">➕ Ajouter leçons/exercices</a>
+  </li>
+  <li>
+    <a href="{{ url_for('admin.manage_users') }}">Gérer les admins</a>
+  </li>
+  <li>
+    <a href="{{ url_for('admin.add_exercice_interactif') }}"
+      >Créer Exercices personalisés</a
+    >
+  </li>
+  {% for matiere in matieres %}
+  <li>
+    <span>{{ matiere['nom'] }}</span>
+    <form
+      method="POST"
+      class="Gestion"
+      action="{{ url_for('admin.delete_matiere', matiere_id=matiere._id) }}"
+      onsubmit="return confirmDeleteMatiere();"
+    >
+      <button type="submit">Supprimer</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+
+<h2>Gestion des thèmes</h2>
+<form method="POST" action="/add_theme">
+  <input type="text" name="nom" placeholder="Nom du thème" />
+  <select name="matiere_id">
+    {% for matiere in matieres %}
+    <option value="{{ matiere['_id'] }}">{{ matiere['nom'] }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Ajouter</button>
+</form>
+<ul>
+  {% for theme in themes %}
+  <li>
+    {{ theme['nom'] }}
+    <form
+      method="POST"
+      action="{{ url_for('admin.delete_theme', theme_id=theme._id) }}"
+      onsubmit="return confirmDeleteTheme();"
+    >
+      <button type="submit">Supprimer le thème</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %} {% endblock %}

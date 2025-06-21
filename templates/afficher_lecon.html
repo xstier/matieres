@@ -1,0 +1,22 @@
+{% extends "base.html" %} {% block content %}
+<h2>{{ lesson.titre }}</h2>
+
+{% if lesson.fichier %}
+<p>
+  <a
+    href="{{ url_for('static', filename='uploads/' + lesson.fichier) }}"
+    target="_blank"
+  >
+    Télécharger le fichier
+  </a>
+</p>
+{% else %}
+<div>{{ lesson.contenu|safe }}</div>
+{% endif %}
+
+<p>
+  <a href="{{ url_for('afficher_themes', matiere_id=theme.matiere_id) }}"
+    >← Retour aux thèmes</a
+  >
+</p>
+{% endblock %}

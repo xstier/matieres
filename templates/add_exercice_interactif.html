@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Créer un exercice interactif</h2>
+
+<form method="POST" action="{{ url_for('admin.add_exercice_interactif') }}>
+  <label for="matiere-select">Matière :</label>
+  <select name="matiere_id" id="matiere-select" required>
+    {% for matiere in matieres %}
+      <option value="{{ matiere._id }}">{{ matiere.nom }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="theme-select">Thème :</label>
+  <select name="theme_id" id="theme-select" required></select>
+
+  <label for="titre">Titre de l'exercice :</label>
+  <input type="text" name="titre" id="titre" required />
+
+  <label for="question">Question :</label>
+  <textarea name="question" id="question" rows="3" required></textarea>
+
+  <label for="editor">Réponse (interactif) :</label>
+  <div id="editor" contenteditable="true" class="editable-zone">
+    Tapez la réponse ici, puis utilisez les outils ci-dessous pour insérer des champs interactifs.
+  </div>
+  <input type="hidden" name="reponse_html" id="reponse_html" />
+
+  <div class="tools">
+    <button type="button" id="add-blank">Zone à remplir</button>
+    <button type="button" id="add-choices">Choix multiples</button>
+  </div>
+
+  <button type="submit">Enregistrer</button>
+</form>
+
+<script src="{{ url_for('static', filename='js/interactif.js') }}"></script>
+<script src="{{ url_for('static', filename='js/theme-loader.js') }}"></script>
+<script src="{{ url_for('static', filename='js/editor-tools.js') }}"></script>
+
+<style>
+.editable-zone {
+  min-height: 150px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #fff;
+}
+.tools {
+  margin: 10px 0;
+  display: flex;
+  gap: 10px;
+}
+</style>
+{% endblock %}
+

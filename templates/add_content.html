@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Ajouter une leçon ou un exercice</h2>
+
+<!-- Sélection de la matière -->
+<form method="get" action="{{ url_for('admin.add_content') }}">
+  <label>Matière :</label>
+  <select name="matiere_id" onchange="this.form.submit()">
+    <option value="">-- Choisir une matière --</option>
+    {% for mat in matieres %}
+      <option value="{{ mat._id }}" {% if mat._id|string == selected_matiere %}selected{% endif %}>
+        {{ mat.nom }}
+      </option>
+    {% endfor %}
+  </select>
+</form>
+
+<!-- Sélection du thème -->
+{% if selected_matiere %}
+  <form method="get" action="{{ url_for('admin.add_content') }}">
+    <input type="hidden" name="matiere_id" value="{{ selected_matiere }}">
+    <label>Thème :</label>
+    <select name="theme_id" onchange="this.form.submit()">
+      <option value="">-- Choisir un thème --</option>
+      {% for th in themes %}
+        <option value="{{ th._id }}" {% if th._id|string == request.args.get('theme_id') %}selected{% endif %}>
+          {{ th.nom }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+{% endif %}
+
+<!-- Ajout de contenu -->
+{% if selected_theme %}
+  <hr>
+  <h3>Ajouter une leçon</h3>
+  <form method="post" action="{{ url_for('admin.add_lesson') }}" enctype="multipart/form-data">
+    <input type="hidden" name="theme_id" value="{{ selected_theme._id }}">
+    <input type="hidden" name="matiere_id" value="{{ selected_matiere }}">
+    <input type="text" name="titre" placeholder="Titre de la leçon" required><br>
+    <textarea name="contenu" placeholder="Contenu texte (optionnel)"></textarea><br>
+    <input type="file" name="fichier"><br>
+    <button type="submit">Ajouter la leçon</button>
+  </form>
+
+  <h3>Ajouter un exercice</h3>
+  <form method="post" action="{{ url_for('admin.add_exercise') }}" enctype="multipart/form-data">
+    <input type="hidden" name="theme_id" value="{{ selected_theme._id }}">
+    <input type="hidden" name="matiere_id" value="{{ selected_matiere }}">
+    <input type="text" name="titre" placeholder="Titre de l'exercice" required><br>
+    <textarea name="contenu" placeholder="Contenu texte (optionnel)"></textarea><br>
+    <input type="file" name="fichier"><br>
+    <button type="submit">Ajouter l'exercice</button>
+  </form>
+
+  <hr>
+
+  <!-- Leçons existantes -->
+  <h3>Leçons du thème {{ selected_theme.nom }}</h3>
+  {% for lecon in selected_theme.lessons %}
+    <div>
+      <strong onclick="toggleContent('lesson-{{ loop.index }}')" style="cursor:pointer;">
+        📘 {{ lecon.titre }}
+      </strong>
+      {% if lecon.fichier %}
+        - <a href="{{ url_for('static', filename='uploads/' + lecon.fichier) }}" target="_blank">Télécharger le fichier</a>
+      {% endif %}
+      <form method="post" action="{{ url_for('admin.delete_lesson', theme_id=selected_theme._id, lesson_index=loop.index0) }}?matiere_id={{ selected_matiere }}">
+
+        <button type="submit" onclick="return confirm('Supprimer cette leçon ?')">❌</button>
+      </form>
+
+      {% if lecon.contenu %}
+        <div id="lesson-{{ loop.index }}" style="display:none; margin-left:20px; padding:5px;">
+          {{ lecon.contenu }}
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  <h3>Exercices du thème {{ selected_theme.nom }}</h3>
+  {% for ex in selected_theme.exercises %}
+    <div>
+      <strong onclick="toggleContent('ex-{{ loop.index }}')" style="cursor:pointer;">
+        📝 {{ ex.titre }}
+      </strong>
+      {% if ex.fichier %}
+        - <a href="{{ url_for('static', filename='uploads/' + ex.fichier) }}" target="_blank">Télécharger le fichier</a>
+      {% endif %}
+      <form method="post" action="{{ url_for('admin.delete_exercise', theme_id=selected_theme._id, exercise_index=loop.index0) }}?matiere_id={{ selected_matiere }}" style="display:inline;">
+
+        <input type="hidden" name="theme_id" value="{{ selected_theme._id }}">
+        <input type="hidden" name="titre" value="{{ ex.titre }}">
+        <button type="submit" onclick="return confirm('Supprimer cet exercice ?')">❌</button>
+      </form>
+      {% if ex.contenu %}
+        <div id="ex-{{ loop.index }}" style="display:none; margin-left:20px; padding:5px;">
+          {{ ex.contenu }}
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<!-- Inclusion du JS -->
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}
+
+
+
