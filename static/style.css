@@ -211,3 +211,10 @@ form button:hover {
 .actions button:hover {
   background-color: #1b5dbf;
 }
+.lesson-content {
+  display: none;
+  transition: all 0.3s ease;
+}
+.lesson-content.visible {
+  display: block;
+}
