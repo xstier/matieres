@@ -30,7 +30,6 @@ def login():
                 return redirect(url_for("index"))
         else:
             flash("Identifiants incorrects.")  # <-- Utilisation de flash
-
     return render_template("login.html")
 
 
