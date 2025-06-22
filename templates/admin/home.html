@@ -1,13 +1,57 @@
 {% extends "base.html" %} {% block content %}
-<h2>Panneau d'administration</h2>
+<div class="container mt-4">
+  <h1 class="mb-4">Tableau de bord Administrateur</h1>
 
-<ul>
-  <li><a href="{{ url_for('admin.list_matieres') }}">Gérer les matières</a></li>
-  <li><a href="{{ url_for('admin.list_themes') }}">Gérer les thèmes</a></li>
-  <li>
-    <a href="{{ url_for('admin.add_exercice_interactif') }}"
-      >Ajouter un exercice interactif</a
-    >
-  </li>
-</ul>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card border-primary h-100">
+        <div class="card-body">
+          <h5 class="card-title">📚 Gérer les Matières</h5>
+          <p class="card-text">Ajouter, modifier ou supprimer des matières.</p>
+          <a href="{{ url_for('admin.list_matieres') }}" class="btn btn-primary"
+            >Accéder</a
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card border-success h-100">
+        <div class="card-body">
+          <h5 class="card-title">🧩 Gérer les Thèmes</h5>
+          <p class="card-text">Organiser les thèmes par matière.</p>
+          <a href="{{ url_for('admin.list_themes') }}" class="btn btn-success"
+            >Accéder</a
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card border-warning h-100">
+        <div class="card-body">
+          <h5 class="card-title">➕ Ajouter un Exercice</h5>
+          <p class="card-text">Créer un exercice interactif lié à un thème.</p>
+          <a
+            href="{{ url_for('admin.add_exercice_interactif') }}"
+            class="btn btn-warning"
+            >Ajouter</a
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card border-success h-100">
+        <div class="card-body">
+          <h5 class="card-title">Gérer les Leçons</h5>
+          <p class="card-text">Ajouter une leçon lié à un théme</p>
+          <a href="{{ url_for('admin.add_lesson') }}" class="btn btn-primary">
+            Ajouter</a
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

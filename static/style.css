@@ -206,3 +206,15 @@ ul.flashes {
     margin-top: 0.5rem;
   }
 }
+
+.themes-list {
+  list-style: none;
+  padding: 0;
+}
+
+.themes-list li {
+  margin-bottom: 1em;
+  background-color: #f5f5f5;
+  padding: 1em;
+  border-radius: 8px;
+}

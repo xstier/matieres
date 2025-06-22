@@ -1,22 +1,38 @@
 {% extends "base.html" %} {% block content %}
-<h2>{{ lesson.titre }}</h2>
+<div class="container mt-4">
+  <h2>{{ theme.nom }} - Leçon</h2>
 
-{% if lesson.fichier %}
-<p>
-  <a
-    href="{{ url_for('static', filename='uploads/' + lesson.fichier) }}"
-    target="_blank"
-  >
-    Télécharger le fichier
-  </a>
-</p>
-{% else %}
-<div>{{ lesson.contenu|safe }}</div>
-{% endif %}
+  <div class="card mt-3">
+    <div class="card-body">
+      <h4 class="card-title">{{ lesson.titre }}</h4>
+      <p class="card-text">{{ lesson.contenu | safe }}</p>
 
-<p>
-  <a href="{{ url_for('afficher_themes', matiere_id=theme.matiere_id) }}"
-    >← Retour aux thèmes</a
-  >
-</p>
-{% endblock %}
+      {% if lesson.fichier %}
+      <hr />
+      <p>
+        📎 Fichier joint :
+        <a
+          href="{{ url_for('static', filename='uploads/' ~ lesson.fichier) }}"
+          target="_blank"
+        >
+          {{ lesson.fichier }}
+        </a>
+      </p>
+      {% endif %} {% if session.get("admin") %}
+      <hr />
+      <div class="d-flex gap-2">
+        <a
+          href="{{ url_for('admin.edit_lecon', theme_id=theme._id|string, index=loop.index0) }}"
+          class="btn btn-outline-primary"
+          >✏️ Modifier</a
+        >
+
+        <form
+          action="{{ url_for('admin.delete_lecon', theme_id=theme._id|string, index=loop.index0) }}"
+          method="POST"
+          onsubmit="return confirm('Supprimer cette leçon ?')"
+        ></form>
+      </div>
+    </div>
+  </div>
+</div>

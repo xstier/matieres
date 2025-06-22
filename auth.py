@@ -23,14 +23,18 @@ def login():
             session["username"] = user["username"]
             session["name"] = user["name"]
             session["role"] = user["role"]
+
             if user["role"] == "admin":
                 session["admin"] = True
-                return redirect(url_for("admin.admin_home"))
+                return redirect(url_for("admin.admin_home"))  # <- admin vers admin
             else:
-                return redirect(url_for("index"))
+                session["admin"] = False  # <- AJOUT important
+                return redirect(url_for("index"))  # <- utilisateur normal vers /
         else:
-            flash("Identifiants incorrects.")  # <-- Utilisation de flash
+            flash("Identifiants incorrects.")
     return render_template("login.html")
+
+
 
 
 

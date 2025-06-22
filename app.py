@@ -1,3 +1,4 @@
+import os
 from bson import ObjectId
 from flask import Flask, redirect, render_template, session, flash, url_for
 from pymongo import MongoClient
@@ -6,7 +7,9 @@ from auth import auth
 
 app = Flask(__name__)
 app.secret_key = 'votre_cle_secrete'
+UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads')
 
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # DB client et collections globales
 client = MongoClient("mongodb://localhost:27017/")
 db = client["matieres"]
@@ -17,10 +20,15 @@ themes_col = db["themes"]
 app.register_blueprint(auth)
 app.register_blueprint(admin)
 
+@app.context_processor
+def inject_matieres():
+    matieres = list(matieres_col.find())
+    return dict(matieres=matieres)
+
+
 @app.route("/")
 def index():
-    matieres = list(matieres_col.find())
-    return render_template("index.html", matieres=matieres, session=session)
+    return render_template("index.html", session=session)
 
 @app.route("/themes/<matiere_id>")
 def afficher_themes(matiere_id):
@@ -39,7 +47,6 @@ def afficher_themes(matiere_id):
     matieres = list(matieres_col.find())
     return render_template(
         "index.html",
-        matieres=matieres,
         themes=themes,
         selected_id=matiere_id,
         no_content=no_content,

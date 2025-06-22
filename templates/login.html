@@ -11,10 +11,14 @@
   <body>
     <h1>Se connecter</h1>
 
-    {# Affichage d’un message d’erreur ou d’info passé par Flask #} {% if
-    message %}
-    <p class="message-error">{{ message }}</p>
-    {% endif %} {# Formulaire de connexion POST vers la route 'auth.login' #}
+    {% with messages = get_flashed_messages() %} {% if messages %}
+    <ul class="flashes">
+      {% for message in messages %}
+      <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %} {% endwith %}
+
     <form method="POST" action="{{ url_for('auth.login') }}">
       <label for="username">Nom d'utilisateur :</label><br />
       <input

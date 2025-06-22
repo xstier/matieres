@@ -1,0 +1,62 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-4">
+  <h2>Modifier la leçon</h2>
+
+  <form method="POST" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label for="titre" class="form-label">Titre de la leçon</label>
+      <input
+        type="text"
+        class="form-control"
+        id="titre"
+        name="titre"
+        required
+        value="{{ lesson.titre }}"
+      />
+    </div>
+
+    <div class="mb-3">
+      <label for="contenu" class="form-label">Contenu</label>
+      <textarea
+        class="form-control"
+        id="contenu"
+        name="contenu"
+        rows="6"
+        required
+      >
+{{ lesson.contenu }}</textarea
+      >
+    </div>
+
+    <div class="mb-3">
+      <label for="fichier" class="form-label">Fichier (PDF, DOCX, etc.)</label>
+      {% if lesson.fichier %}
+      <p>
+        Fichier actuel :
+        <a
+          href="{{ url_for('static', filename='uploads/' ~ lesson.fichier) }}"
+          target="_blank"
+          >{{ lesson.fichier }}</a
+        >
+      </p>
+      {% endif %}
+      <input
+        type="file"
+        class="form-control"
+        id="fichier"
+        name="fichier"
+        accept=".pdf,.doc,.docx,.odt"
+      />
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+      Enregistrer les modifications
+    </button>
+    <a
+      href="{{ url_for('afficher_lecon', theme_id=theme._id|string, lesson_index=loop.index0) }}"
+      class="btn btn-secondary"
+      >Annuler</a
+    >
+  </form>
+</div>
+{% endblock %}
