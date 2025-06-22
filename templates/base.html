@@ -24,6 +24,11 @@
           >Bienvenue Admin {{ session.get("username") }}</span
         >
         <a href="{{ url_for('admin.admin_home') }}">Panneau admin</a>
+        <a href="{{ url_for('admin.list_matieres') }}">Matières</a>
+        <a href="{{ url_for('admin.list_themes') }}">Thèmes</a>
+        <a href="{{ url_for('admin.add_exercice_interactif') }}"
+          >+ Exercice interactif</a
+        >
         <a href="{{ url_for('auth.logout') }}">Se déconnecter</a>
         {% elif session.get("username") %}
         <span class="welcome-msg">Bienvenue {{ session.get("username") }}</span>

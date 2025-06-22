@@ -9,6 +9,8 @@ client = MongoClient("mongodb://localhost:27017/")
 db = client["matieres"]
 users_col = db["users"]
 
+from flask import flash
+
 @auth.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -19,17 +21,20 @@ def login():
         if user and check_password_hash(user["password"], password):
             session.clear()
             session["username"] = user["username"]
-            session["name"] = user.get("name", "")
-            session["role"] = user.get("role", "user")
-
-            if session["role"] == "admin":
+            session["name"] = user["name"]
+            session["role"] = user["role"]
+            if user["role"] == "admin":
                 session["admin"] = True
                 return redirect(url_for("admin.admin_home"))
             else:
                 return redirect(url_for("index"))
+        else:
+            flash("Identifiants incorrects.")  # <-- Utilisation de flash
 
-        flash("Identifiants incorrects.")
     return render_template("login.html")
+
+
+
 
 @auth.route("/logout")
 def logout():

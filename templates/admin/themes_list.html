@@ -1,0 +1,45 @@
+{% extends "base.html" %} {% block content %}
+<h2>Liste des thèmes</h2>
+
+<a href="{{ url_for('admin.add_theme') }}" class="btn">+ Ajouter un thème</a>
+
+{% if themes %}
+<table>
+  <thead>
+    <tr>
+      <th>Nom</th>
+      <th>Matière associée</th>
+      <th>Description</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for theme in themes %}
+    <tr>
+      <td>{{ theme.nom }}</td>
+      <td>{{ theme.matiere_nom }}</td>
+      <td>{{ theme.description or '—' }}</td>
+      <td>
+        <a href="{{ url_for('admin.edit_theme', theme_id=theme._id) }}"
+          >Modifier</a
+        >
+        <form
+          action="{{ url_for('admin.delete_theme', theme_id=theme._id) }}"
+          method="POST"
+          style="display: inline"
+        >
+          <button
+            type="submit"
+            onclick="return confirm('Supprimer ce thème ?')"
+          >
+            Supprimer
+          </button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Aucun thème trouvé.</p>
+{% endif %} {% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %} {% block content %}
+<h2>Panneau d'administration</h2>
+
+<ul>
+  <li><a href="{{ url_for('admin.list_matieres') }}">Gérer les matières</a></li>
+  <li><a href="{{ url_for('admin.list_themes') }}">Gérer les thèmes</a></li>
+  <li>
+    <a href="{{ url_for('admin.add_exercice_interactif') }}"
+      >Ajouter un exercice interactif</a
+    >
+  </li>
+</ul>
+{% endblock %}

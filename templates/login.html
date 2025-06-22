@@ -9,23 +9,38 @@
     />
   </head>
   <body>
-    <h1>Connexion utilisateur</h1>
+    <h1>Se connecter</h1>
 
-    {% if message %}
-    <p style="color: red">{{ message }}</p>
-    {% endif %}
+    {# Affichage d’un message d’erreur ou d’info passé par Flask #} {% if
+    message %}
+    <p class="message-error">{{ message }}</p>
+    {% endif %} {# Formulaire de connexion POST vers la route 'auth.login' #}
+    <form method="POST" action="{{ url_for('auth.login') }}">
+      <label for="username">Nom d'utilisateur :</label><br />
+      <input
+        type="text"
+        id="username"
+        name="username"
+        required
+        autofocus
+        autocomplete="username"
+      /><br /><br />
 
-    <form method="POST">
-      <input type="email" name="username" placeholder="Votre email" required />
+      <label for="password">Mot de passe :</label><br />
       <input
         type="password"
+        id="password"
         name="password"
-        placeholder="Mot de passe"
         required
-      />
+        autocomplete="current-password"
+      /><br /><br />
+
       <button type="submit">Se connecter</button>
     </form>
 
-    <a href="{{ url_for('auth.register') }}">Créer un compte</a>
+    <p>
+      Pas encore de compte ?
+      <a href="{{ url_for('auth.register') }}">Inscrivez-vous ici</a>.
+    </p>
   </body>
 </html>

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Modifier le thème</h2>
+
+<form method="POST">
+  <label for="nom">Nom :</label>
+  <input type="text" name="nom" id="nom" value="{{ theme.nom }}" required />
+
+  <label for="description">Description :</label>
+  <textarea name="description" id="description" rows="3">{{ theme.description }}</textarea>
+
+  <label for="matiere_id">Matière associée :</label>
+  <select name="matiere_id" id="matiere_id" required>
+    {% for matiere in matieres %}
+      <option value="{{ matiere._id }}" {% if matiere._id == theme.matiere_id %}selected{% endif %}>
+        {{ matiere.nom }}
+      </option>
+    {% endfor %}
+  </select>
+
+  <button type="submit">Enregistrer</button>
+</form>
+{% endblock %}

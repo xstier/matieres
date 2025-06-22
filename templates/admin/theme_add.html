@@ -1,0 +1,20 @@
+{% extends "base.html" %} {% block content %}
+<h2>Ajouter un thème</h2>
+
+<form method="POST">
+  <label for="nom">Nom :</label>
+  <input type="text" name="nom" id="nom" required />
+
+  <label for="description">Description :</label>
+  <textarea name="description" id="description" rows="3"></textarea>
+
+  <label for="matiere_id">Matière associée :</label>
+  <select name="matiere_id" id="matiere_id" required>
+    {% for matiere in matieres %}
+    <option value="{{ matiere._id }}">{{ matiere.nom }}</option>
+    {% endfor %}
+  </select>
+
+  <button type="submit">Ajouter</button>
+</form>
+{% endblock %}

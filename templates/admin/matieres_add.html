@@ -1,0 +1,17 @@
+{% extends "base.html" %} {% block content %}
+<h2>Ajouter une matière</h2>
+
+<form method="POST" action="{{ url_for('admin.add_matiere') }}">
+  <label for="nom">Nom :</label>
+  <input type="text" id="nom" name="nom" required />
+
+  <label for="description">Description :</label>
+  <textarea id="description" name="description"></textarea>
+
+  <button type="submit">Ajouter</button>
+</form>
+
+<a href="{{ url_for('admin.list_matieres') }}"
+  >Retour à la liste des matières</a
+>
+{% endblock %}

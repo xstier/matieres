@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request, flash
+from flask import Blueprint, render_template, session, redirect, url_for, request, flash , jsonify
 from pymongo import MongoClient
 from datetime import datetime
+from bson import ObjectId
 
 admin = Blueprint('admin', __name__)
 
@@ -10,6 +11,7 @@ db = client["matieres"]
 # Exemple : collection des matières
 matieres_col = db["matieres"]
 users_col = db["users"]
+themes_col = db["themes"]
 
 # Middleware simple pour vérifier si l'utilisateur est admin
 def admin_required(f):
@@ -105,3 +107,114 @@ def delete_matiere(matiere_id):
     matieres_col.delete_one({"_id": ObjectId(matiere_id)})
     flash("Matière supprimée.")
     return redirect(url_for("admin.list_matieres"))
+@admin.route('/exercice_interactif/add', methods=['GET', 'POST'])
+def add_exercice_interactif():
+    matieres = list(db.matieres.find())
+    if request.method == 'POST':
+        matiere_id = request.form.get('matiere_id')
+        theme_id = request.form.get('theme_id')
+        titre = request.form.get('titre')
+        question = request.form.get('question')
+        reponse_html = request.form.get('reponse_html')
+
+        # Ici, tu peux ajouter la validation et insertion dans la base
+        exercice = {
+            'matiere_id': ObjectId(matiere_id),
+            'theme_id': ObjectId(theme_id),
+            'titre': titre,
+            'question': question,
+            'reponse_html': reponse_html,
+            'created_at': datetime.now()
+        }
+        db.exercices_interactifs.insert_one(exercice)
+        flash("Exercice interactif créé avec succès !")
+        return redirect(url_for('admin.admin_home'))
+
+    return render_template('add_exercice_interactif.html', matieres=matieres)
+@admin.route('/themes')
+@admin_required
+def list_themes():
+    themes = list(themes_col.find())
+    matieres_dict = {m["_id"]: m["nom"] for m in matieres_col.find()}
+    for theme in themes:
+        theme["matiere_nom"] = matieres_dict.get(theme["matiere_id"], "Inconnue")
+    return render_template("admin/themes_list.html", themes=themes)
+
+@admin.route('/themes/add', methods=['GET', 'POST'])
+@admin_required
+def add_theme():
+    matieres = list(matieres_col.find())
+    if request.method == 'POST':
+        nom = request.form.get("nom", "").strip()
+        description = request.form.get("description", "").strip()
+        matiere_id = request.form.get("matiere_id")
+
+        if not nom or not matiere_id:
+            flash("Tous les champs sont obligatoires.")
+            return render_template("admin/themes_add.html", matieres=matieres)
+
+        themes_col.insert_one({
+            "nom": nom,
+            "description": description,
+            "matiere_id": ObjectId(matiere_id),
+            "created_at": datetime.now()
+        })
+        flash("Thème ajouté avec succès.")
+        return redirect(url_for("admin.list_themes"))
+
+    return render_template("admin/themes_add.html", matieres=matieres)
+
+# Modifier un thème
+@admin.route('/themes/edit/<theme_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_theme(theme_id):
+    theme = themes_col.find_one({"_id": ObjectId(theme_id)})
+    if not theme:
+        flash("Thème introuvable.")
+        return redirect(url_for("admin.list_themes"))
+
+    matieres = list(matieres_col.find())
+
+    if request.method == 'POST':
+        nom = request.form.get("nom", "").strip()
+        description = request.form.get("description", "").strip()
+        matiere_id = request.form.get("matiere_id")
+
+        if not nom or not matiere_id:
+            flash("Tous les champs sont requis.")
+            return render_template("admin/themes_edit.html", theme=theme, matieres=matieres)
+
+        themes_col.update_one({"_id": ObjectId(theme_id)}, {"$set": {
+            "nom": nom,
+            "description": description,
+            "matiere_id": ObjectId(matiere_id),
+            "updated_at": datetime.now()
+        }})
+        flash("Thème modifié avec succès.")
+        return redirect(url_for("admin.list_themes"))
+
+    return render_template("admin/themes_edit.html", theme=theme, matieres=matieres)
+
+# Supprimer un thème
+@admin.route('/themes/delete/<theme_id>', methods=['POST'])
+@admin_required
+def delete_theme(theme_id):
+    themes_col.delete_one({"_id": ObjectId(theme_id)})
+    flash("Thème supprimé.")
+    return redirect(url_for("admin.list_themes"))
+from flask import jsonify
+
+@admin.route('/api/themes/<matiere_id>')
+def api_get_themes(matiere_id):
+    from bson.objectid import ObjectId
+
+    try:
+        themes = list(db.themes.find({"matiere_id": ObjectId(matiere_id)}))
+        # Convertir ObjectId en str pour JSON
+        for theme in themes:
+            theme['_id'] = str(theme['_id'])
+            theme['matiere_id'] = str(theme['matiere_id'])
+        return jsonify(themes)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+

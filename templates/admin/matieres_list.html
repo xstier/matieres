@@ -1,0 +1,11 @@
+{% extends "base.html" %} {% block content %}
+<h2>Liste des matières</h2>
+<ul>
+  {% for matiere in matieres %}
+  <li>{{ matiere.nom }}</li>
+  {% else %}
+  <li>Aucune matière trouvée.</li>
+  {% endfor %}
+</ul>
+<a href="{{ url_for('admin.add_matiere') }}">Ajouter une matière</a>
+{% endblock %}
