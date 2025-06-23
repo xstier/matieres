@@ -1,0 +1,42 @@
+{% extends "base.html" %} {% block content %}
+<div class="container py-4">
+  <h2>{{ exercice.titre }}</h2>
+
+  <div class="exercice-question mb-3">
+    <p>{{ exercice.question }}</p>
+  </div>
+
+  <form
+    method="POST"
+    action="{{ url_for('afficher_exercice', exercice_id=exercice._id) }}"
+    novalidate
+  >
+    {% if exercice.reponses_attendues %} {% set reponses =
+    exercice.reponses_attendues %} {% if reponses | length > 0 %}
+    <div id="reponse-interactive">{{ exercice.reponse_html | safe }}</div>
+    {% else %}
+    <div class="mb-3">
+      <label for="reponse_libre" class="form-label">Votre réponse :</label>
+      <input
+        type="text"
+        name="reponse_libre"
+        id="reponse_libre"
+        class="form-control"
+      />
+    </div>
+    {% endif %} {% else %}
+    <div class="mb-3">
+      <label for="reponse_libre" class="form-label">Votre réponse :</label>
+      <input
+        type="text"
+        name="reponse_libre"
+        id="reponse_libre"
+        class="form-control"
+      />
+    </div>
+    {% endif %}
+
+    <button type="submit" class="btn btn-primary">Valider</button>
+  </form>
+</div>
+{% endblock %}

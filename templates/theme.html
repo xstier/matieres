@@ -1,0 +1,59 @@
+{% extends "base.html" %} {% block content %}
+<div class="container py-4">
+  <h2>Thème : {{ theme.nom }}</h2>
+
+  <div class="row">
+    <!-- Leçons -->
+    <div class="col-md-6 mb-4">
+      <h4>📘 Leçons</h4>
+      {% if lecons %}
+      <ul class="list-unstyled">
+        {% for lecon in lecons %}
+        <li class="mb-2">
+          {% if lecon.fichier %}
+          <!-- Lien vers fichier PDF -->
+          <a
+            href="{{ url_for('static', filename=lecon.fichier.replace('\\', '/') ) }}"
+            target="_blank"
+          >
+            {{ lecon.titre or "Fichier PDF" }}
+          </a>
+          {% elif lecon.contenu %}
+          <!-- Lien vers contenu textuel -->
+          <a
+            href="{{ url_for('afficher_lecon', theme_nom=theme.nom, lecon_index=loop.index0) }}"
+          >
+            {{ lecon.titre or "Leçon" }}
+          </a>
+          {% else %}
+          <!-- Aucun contenu -->
+          <span>{{ lecon.titre or "Leçon sans contenu" }}</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>Aucune leçon disponible.</p>
+      {% endif %}
+    </div>
+
+    <!-- Exercices -->
+    <div class="col-md-6 mb-4">
+      <h4>📝 Exercices</h4>
+      {% if exercices %}
+      <ul class="list-unstyled">
+        {% for ex in exercices %}
+        <li class="mb-2">
+          <a href="{{ url_for('afficher_exercice', exercice_id=ex._id) }}">
+            {{ ex.titre }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>Aucun exercice interactif.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

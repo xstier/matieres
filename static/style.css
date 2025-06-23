@@ -1,6 +1,6 @@
 :root {
   --color-primary: #333;
-  --color-secondary: white;
+  --color-secondary: #ecf0f1;
 }
 /* Reset de base */
 * {
@@ -21,8 +21,8 @@ body {
 
 /* Header */
 header {
-  background: #004080;
-  color: white;
+  background: #004080 !important;
+  color: var(--color-secondary);
   padding: 1rem 2rem;
   display: flex;
   align-items: center;
@@ -33,30 +33,46 @@ header {
 .logo {
   font-weight: 700;
   font-size: 1.5rem;
+  color: #ecf0f1;
   letter-spacing: 2px;
 }
 
+.nav-matieres {
+  display: flex;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #f8f9fa; /* gris clair */
+}
+
 .nav-matieres a {
-  color: white;
+  color: #212529; /* noir Bootstrap */
   text-decoration: none;
-  margin: 0 0.7rem;
-  font-weight: 600;
-  transition: color 0.3s ease;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s ease;
+}
+#matiere-list {
+  display: flex;
+  flex-flow: row wrap;
+  align-content: center;
+  justify-content: center;
+}
+.nav-matieres a:hover,
+.nav-matieres a:focus {
+  background-color: #0d6efd; /* bleu Bootstrap */
+  color: #fff;
 }
 
-.nav-matieres a:hover {
-  color: #ffd700;
-}
-
-.auth a {
-  color: white;
+.auth a .auth .welcome-msg {
+  color: #f8f9fa !important;
   margin-left: 1rem;
   text-decoration: none;
   font-weight: 600;
 }
 
-.auth a:hover {
+.auth a:hover .auth a:focus {
   text-decoration: underline;
+  color: #0d6efd !important;
 }
 
 .welcome-msg {
@@ -217,4 +233,24 @@ ul.flashes {
   background-color: #f5f5f5;
   padding: 1em;
   border-radius: 8px;
+}
+.blank-zone {
+  background-color: #eef;
+  padding: 2px 6px;
+  border: 1px dashed #888;
+  border-radius: 4px;
+  margin: 0 2px;
+}
+
+select.multiple-choices {
+  margin: 0 4px;
+  padding: 2px 6px;
+  background-color: #f9f9f9;
+}
+
+select.interactive-select {
+  width: auto;
+  min-width: 80px;
+  max-width: 250px;
+  font-size: 1rem;
 }

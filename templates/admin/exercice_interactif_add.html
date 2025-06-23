@@ -1,0 +1,87 @@
+{% extends "base.html" %} {% block content %}
+<!-- Ajoute ces scripts dans ton base.html ou dans le template -->
+
+<div class="container mt-4">
+  <h2>Créer un exercice interactif</h2>
+
+  <form method="POST" action="{{ url_for('admin.add_exercice_interactif') }}">
+    <!-- Matière -->
+    <div class="mb-3">
+      <label for="matiere-select" class="form-label">Matière :</label>
+      <select
+        name="matiere_id"
+        id="matiere-select"
+        class="form-select"
+        required
+      >
+        <option value="">-- Choisir une matière --</option>
+        {% for matiere in matieres %}
+        <option value="{{ matiere._id }}">{{ matiere.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Thème -->
+    <div class="mb-3">
+      <label for="theme-select" class="form-label">Thème :</label>
+      <select name="theme_id" id="theme-select" class="form-select" required>
+        <option value="">-- Choisir un thème --</option>
+      </select>
+    </div>
+
+    <!-- Titre -->
+    <div class="mb-3">
+      <label for="titre" class="form-label">Titre de l'exercice :</label>
+      <input
+        type="text"
+        name="titre"
+        id="titre"
+        class="form-control"
+        required
+      />
+    </div>
+
+    <!-- Question -->
+    <div class="mb-3">
+      <label for="question" class="form-label">Question :</label>
+      <textarea
+        name="question"
+        id="question"
+        class="form-control"
+        rows="3"
+        required
+      ></textarea>
+    </div>
+
+    <!-- Réponse interactive -->
+    <div class="mb-3">
+      <label for="editor" class="form-label">Réponse (interactif) :</label>
+      <div id="editor" contenteditable="true" class="editable-zone">
+        Tapez la réponse ici, puis utilisez les outils ci-dessous pour insérer
+        des champs interactifs.
+      </div>
+      <input type="hidden" name="reponse_html" id="reponse_html" />
+    </div>
+
+    <!-- Outils -->
+    <div class="tools mb-3">
+      <label for="file-upload">Importer contenu Word/PDF :</label>
+      <input type="file" id="file-upload" accept=".doc,.docx,application/pdf" />
+      <button type="button" id="import-file-btn">Importer</button>
+      <button type="button" class="btn btn-outline-primary" id="add-blank">
+        Zone à remplir
+      </button>
+      <button type="button" class="btn btn-outline-secondary" id="add-choices">
+        Choix multiples
+      </button>
+    </div>
+
+    <!-- Soumettre -->
+    <button type="submit" class="btn btn-success">Enregistrer</button>
+  </form>
+</div>
+{% endblock %} {% block script %} {{ super() }}
+<script src="{{ url_for('static', filename='js/exercice_creator.js') }}"></script>
+<script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.7.107/pdf.min.js"></script>
+{% endblock %}

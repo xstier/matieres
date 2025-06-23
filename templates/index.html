@@ -1,21 +1,9 @@
 {% extends "base.html" %} {% block content %}
-<h1>Bienvenue sur Mon Site Éducatif</h1>
-<p>Choisissez une matière dans le menu en haut pour commencer.</p>
-{% if themes %}
-<h2>Thèmes de la matière sélectionnée</h2>
-<ul class="themes-list">
-  {% for theme in themes %}
-  <li>
-    <strong>{{ theme.nom }}</strong><br />
-    {{ theme.description }}
-    <br />
-    <a
-      href="{{ url_for('afficher_lecon', theme_id=theme['_id'], lesson_index=0) }}"
-      >Voir la première leçon</a
-    >
-  </li>
-  {% endfor %}
-</ul>
-{% elif matiere_exists %}
-<p>Aucun contenu pour cette matière pour le moment.</p>
-{% endif %} {% endblock %}
+<h3 id="themeTitle"></h3>
+<div id="contenu">
+  <p>
+    Sélectionnez une matière puis un thème et une leçon pour voir son contenu
+    ici.
+  </p>
+</div>
+{% endblock %}
