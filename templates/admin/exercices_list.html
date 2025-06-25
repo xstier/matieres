@@ -1,0 +1,47 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-4">
+  <h2>📘 Liste des exercices interactifs</h2>
+
+  <table class="table table-bordered table-hover">
+    <thead class="table-light">
+      <tr>
+        <th>Titre</th>
+        <th>Matière</th>
+        <th>Thème</th>
+        <th>Date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ex in exercices %}
+      <tr>
+        <td>{{ ex.titre }}</td>
+        <td>{{ ex.matiere_nom }}</td>
+        <td>{{ ex.theme_nom }}</td>
+        <td>
+          {{ ex.created_at.strftime('%d/%m/%Y') if ex.created_at else '—' }}
+        </td>
+        <td>
+          <a
+            href="{{ url_for('admin.edit_exercice_interactif', exercice_id=ex._id) }}"
+            class="btn btn-sm btn-primary"
+            >✏️ Modifier</a
+          >
+          <form
+            method="POST"
+            action="{{ url_for('admin.delete_exercice_interactif', exercice_id=ex._id) }}"
+            class="d-inline"
+            onsubmit="return confirm('Supprimer cet exercice ?');"
+          >
+            <button type="submit" class="btn btn-sm btn-danger">
+              🗑️ Supprimer
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{%endblock%}

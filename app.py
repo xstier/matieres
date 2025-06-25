@@ -166,24 +166,38 @@ def afficher_exercice(exercice_id):
         flash("Exercice non trouvé.")
         return redirect(url_for("index"))
 
-    # Parse reponses attendues côté serveur, jamais dans le template
+    # Chargement et parsing sécurisé des réponses attendues
     reponses_attendues = {}
     if "reponses_attendues" in exercice:
         try:
-            reponses_attendues = json.loads(exercice["reponses_attendues"])
+            if isinstance(exercice["reponses_attendues"], str):
+                reponses_attendues = json.loads(exercice["reponses_attendues"])
+            elif isinstance(exercice["reponses_attendues"], dict):
+                reponses_attendues = exercice["reponses_attendues"]
         except Exception:
             reponses_attendues = {}
 
     if request.method == "POST":
         if reponses_attendues:
-            user_answers = {key: request.form.get(key, "").strip() for key in reponses_attendues.keys()}
-            champs_non_remplis = [k for k, v in user_answers.items() if not v]
+            user_answers = {}
+            champs_non_remplis = []
+
+            # Lire uniquement les champs attendus (field_x)
+            for field_name in reponses_attendues:
+                valeur = request.form.get(field_name, "").strip()
+                if not valeur:
+                    champs_non_remplis.append(field_name)
+                user_answers[field_name] = valeur
 
             if champs_non_remplis:
                 flash("Veuillez remplir tous les champs requis.", "warning")
                 return redirect(url_for("afficher_exercice", exercice_id=exercice_id))
 
-            correct = all(user_answers.get(k, "").lower() == v.lower() for k, v in reponses_attendues.items())
+            # Comparaison exacte (insensible à la casse)
+            correct = all(
+                user_answers.get(field, "").lower() == expected.lower()
+                for field, expected in reponses_attendues.items()
+            )
 
             if correct:
                 flash("Bravo, votre réponse est correcte !", "success")
@@ -193,17 +207,24 @@ def afficher_exercice(exercice_id):
             return redirect(url_for("afficher_exercice", exercice_id=exercice_id))
 
         else:
-            # Réponse libre : vérifie si elle est bien remplie
+          # Cas réponse libre : la réponse attendue est dans `reponse_html`
             reponse_libre = request.form.get("reponse_libre", "").strip()
             if not reponse_libre:
                 flash("Veuillez saisir une réponse.", "warning")
                 return redirect(url_for("afficher_exercice", exercice_id=exercice_id))
 
-            flash(f"Votre réponse : {reponse_libre}", "info")
-            return redirect(url_for("afficher_exercice", exercice_id=exercice_id))
+            bonne_reponse = exercice.get("reponse_html", "").strip()
+        if bonne_reponse:
+            if reponse_libre.lower() == bonne_reponse.lower():
+                flash("Bravo, votre réponse est correcte !", "success")
+            else:
+                flash("Désolé, votre réponse est incorrecte.", "danger")
+        else:
+            # Aucun critère de validation défini
+            flash("Votre réponse a été enregistrée.", "info")
 
 
-    # En GET, on envoie juste le contenu à afficher sans reponses_attendues
+    # Nettoyage du HTML avant affichage, pour éviter d'exposer les bonnes réponses
     exercice["reponse_html"] = nettoyer_reponse_html(exercice.get("reponse_html", ""))
 
     return render_template(
@@ -214,6 +235,7 @@ def afficher_exercice(exercice_id):
             "_id": str(exercice["_id"]),
         },
     )
+
 
 
 @app.route('/matieres/<matiere_id>/themes_view')

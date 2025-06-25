@@ -44,10 +44,14 @@ def admin_required(f):
     return decorated_function
 
 # Routes Admin
-@admin.route('/admin')
+@admin.route("/admin")
 @admin_required
 def admin_home():
-    return render_template("admin/home.html")
+    matieres = list(matieres_col.find())
+    themes = list(themes_col.find())
+    exercices = list(exercices_col.find())
+    return render_template("admin/home.html", matieres=matieres, themes=themes, exercices=exercices)
+
 
 # Liste des matières
 @admin.route('/matieres')
@@ -127,7 +131,23 @@ def delete_matiere(matiere_id):
     return redirect(url_for("admin.list_matieres"))
 
 # Ajouter un exercice interactif
-from bs4 import BeautifulSoup  # Assure-toi que bs4 est installé : pip install beautifulsoup4
+@admin.route('/exercices')
+@admin_required
+def list_exercices():
+    exercices = list(exercices_col.find())
+    themes_map = {str(t['_id']): t for t in themes_col.find()}
+    matieres_map = {str(m['_id']): m['nom'] for m in matieres_col.find()}
+
+    for ex in exercices:
+        theme = themes_map.get(str(ex.get('theme_id')))
+        if theme:
+            ex['theme_nom'] = theme.get('nom', '❓Thème inconnu')
+            ex['matiere_nom'] = matieres_map.get(str(theme.get('matiere_id')), '❓Matière inconnue')
+        else:
+            ex['theme_nom'] = '❓Thème inconnu'
+            ex['matiere_nom'] = '❓Matière inconnue'
+
+    return render_template('admin/exercices_list.html', exercices=exercices)
 
 @admin.route('/exercice_interactif/add', methods=['GET', 'POST'])
 @admin_required
@@ -202,6 +222,98 @@ def add_exercice_interactif():
 
     return render_template('admin/exercice_interactif_add.html', matieres=matieres)
 
+@admin.route('/exercice_interactif/delete/<exercice_id>', methods=['POST'])
+@admin_required
+def delete_exercice_interactif(exercice_id):
+    exercice = exercices_col.find_one({"_id": ObjectId(exercice_id)})
+    if not exercice:
+        flash("Exercice introuvable.", "danger")
+        return redirect(url_for('admin.admin_home'))
+
+    exercices_col.delete_one({"_id": ObjectId(exercice_id)})
+    flash("Exercice supprimé avec succès.", "success")
+    return redirect(url_for('admin.admin_home'))
+
+@admin.route('/exercice_interactif/edit/<exercice_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_exercice_interactif(exercice_id):
+    exercice = exercices_col.find_one({"_id": ObjectId(exercice_id)})
+    if not exercice:
+        flash("Exercice introuvable.", "danger")
+        return redirect(url_for('admin.admin_home'))
+
+    matieres = list(matieres_col.find())
+    themes = list(themes_col.find({"matiere_id": exercice["matiere_id"]}))
+
+    if request.method == 'POST':
+        matiere_id = request.form.get('matiere_id')
+        theme_id = request.form.get('theme_id')
+        titre = request.form.get('titre')
+        question = request.form.get('question')
+        reponse_html = request.form.get('reponse_html')
+
+        # Nettoyage & extraction comme pour l'ajout
+        allowed_tags = [
+            'b', 'i', 'em', 'strong', 'u', 'br', 'p', 'div', 'span',
+            'input', 'select', 'option', 'textarea', 'label', 'ul', 'ol', 'li'
+        ]
+
+        allowed_attributes = {
+            '*': ['class', 'style'],
+            'input': ['type', 'class', 'style', 'placeholder', 'value', 'name'],
+            'select': ['class', 'style', 'name'],
+            'option': ['value', 'selected'],
+            'textarea': ['class', 'style', 'name', 'rows', 'cols', 'placeholder'],
+            'div': ['class', 'style'],
+            'span': ['class', 'style'],
+            'p': ['class', 'style'],
+            'label': ['for', 'class', 'style']
+        }
+
+        clean_html = bleach.clean(reponse_html, tags=allowed_tags, attributes=allowed_attributes, strip=True)
+
+        soup = BeautifulSoup(clean_html, 'html.parser')
+        bonnes_reponses = {}
+
+        for input_tag in soup.find_all('input'):
+            name = input_tag.get('name')
+            value = input_tag.get('value', '')
+            if name:
+                bonnes_reponses[name] = value
+
+        for select_tag in soup.find_all('select'):
+            name = select_tag.get('name')
+            selected_option = select_tag.find('option', selected=True)
+            if name and selected_option:
+                bonnes_reponses[name] = selected_option.get('value', '')
+
+        for textarea in soup.find_all('textarea'):
+            name = textarea.get('name')
+            if name:
+                bonnes_reponses[name] = textarea.text.strip()
+
+        exercices_col.update_one(
+            {"_id": ObjectId(exercice_id)},
+            {"$set": {
+                "matiere_id": ObjectId(matiere_id),
+                "theme_id": ObjectId(theme_id),
+                "titre": titre,
+                "question": question,
+                "reponse_html": clean_html,
+                "reponses_attendues": bonnes_reponses,
+                "updated_at": datetime.now()
+            }}
+        )
+
+        flash("Exercice modifié avec succès.", "success")
+        return redirect(url_for('admin.admin_home'))
+
+    return render_template(
+        'admin/exercice_interactif_edit.html',
+        exercice=exercice,
+        matieres=matieres,
+        themes=themes
+    )
 
 # Liste des thèmes
 @admin.route('/themes')
