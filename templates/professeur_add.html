@@ -1,0 +1,23 @@
+{% extends 'base.html' %} {% block content %}
+<h2>Ajouter un professeur</h2>
+
+<form method="POST">
+  <label for="nom">Nom :</label><br />
+  <input type="text" id="nom" name="nom" required /><br /><br />
+
+  <label for="email">Email :</label><br />
+  <input type="email" id="email" name="email" required /><br /><br />
+
+  <label for="mot_de_passe">Mot de passe :</label><br />
+  <input
+    type="password"
+    id="mot_de_passe"
+    name="mot_de_passe"
+    required
+  /><br /><br />
+
+  <button type="submit">Ajouter</button>
+</form>
+
+<a href="{{ url_for('admin.list_professeurs') }}">⬅ Retour à la liste</a>
+{% endblock %}

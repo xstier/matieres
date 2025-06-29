@@ -1,28 +1,52 @@
 import os
-from bson.objectid import ObjectId
-from flask import Flask, redirect, render_template, session, flash, url_for,jsonify,request
-from pymongo import MongoClient
+from flask import Flask, redirect, url_for, session, render_template, flash, jsonify, request
+from bson import ObjectId
+from bs4 import BeautifulSoup
+from extensions import mongo
 from admin_routes import admin
 from auth import auth
-from bs4 import BeautifulSoup
 import json
 
 app = Flask(__name__)
 app.secret_key = 'votre_cle_secrete'
-UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads')
 
+# Configuration
+app.config["MONGO_URI"] = "mongodb://localhost:27017/matieres"
+UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-# DB client et collections globales
-client = MongoClient("mongodb://localhost:27017/")
-db = client["matieres"]
+
+# Initialisation
+mongo.init_app(app)
+
+# Enregistrement des blueprints
+
+app.register_blueprint(admin, url_prefix="/admin")
+app.register_blueprint(auth, url_prefix="/auth")
+
+# Raccourcis vers les collections
+db = mongo.db
 matieres_col = db["matieres"]
 themes_col = db["themes"]
 exercices_col = db["exercices_interactifs"]
 
+# ... (tout le reste de tes routes reste identique)
 
-# Enregistrement des blueprints
-app.register_blueprint(auth)
-app.register_blueprint(admin)
+
+
+@app.context_processor
+def inject_matieres():
+    matieres = list(matieres_col.find())
+    return dict(matieres=matieres)
+
+
+@app.route("/")
+def index():
+    
+    return render_template(
+        "index.html",
+        themes=[],
+        matiere_exists=False,
+    )
 
 
 def nettoyer_reponse_html(html):
@@ -42,15 +66,7 @@ def nettoyer_reponse_html(html):
     return str(soup)
 
 
-@app.context_processor
-def inject_matieres():
-    matieres = list(matieres_col.find())
-    return dict(matieres=matieres)
 
-
-@app.route("/")
-def index():
-    return render_template("index.html", session=session)
 
 
 @app.route("/themes/<matiere_id>")

@@ -1,23 +1,27 @@
 import os
-from flask import Blueprint, render_template, session, redirect, url_for, request, flash, current_app, jsonify
-from pymongo import MongoClient
-from datetime import datetime
+from flask import Blueprint, current_app, render_template , flash , url_for, request,jsonify, redirect
 from bson import ObjectId
+from decorators import admin_required
+from extensions import mongo
+from datetime import datetime
+from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
-from functools import wraps
-import bleach
 from bs4 import BeautifulSoup
+import bleach
+from bleach_config import allowed_tags, allowed_attributes
 
-# Configuration du Blueprint
-admin = Blueprint('admin', __name__)
 
-# Connexion MongoDB
-client = MongoClient("mongodb://localhost:27017/")
-db = client["matieres"]
-matieres_col = db["matieres"]
-users_col = db["users"]
-themes_col = db["themes"]
-exercices_col = db["exercices_interactifs"]
+
+admin = Blueprint("admin", __name__, template_folder="templates/admin")
+
+
+@admin.route("/admin_home")
+def admin_home():
+
+    mongo.db.users = mongo.db.users
+    users = list(mongo.db.users.find())  # Accès à la collection "users"
+ 
+    return render_template("home.html", users=users , )
 
 # Configuration upload
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
@@ -32,32 +36,70 @@ def get_upload_path():
     os.makedirs(upload_folder, exist_ok=True)
     return upload_folder
 
-# Middleware admin
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not session.get("admin"):
-            flash("🔒 Redirection déclenchée depuis :" + request.path)
-            flash("Accès réservé aux administrateurs.")
-            return redirect(url_for("auth.login"))
-        return f(*args, **kwargs)
-    return decorated_function
 
-# Routes Admin
-@admin.route("/admin")
+@admin.route('/manage_users', methods=['GET', 'POST'])
 @admin_required
-def admin_home():
-    matieres = list(matieres_col.find())
-    themes = list(themes_col.find())
-    exercices = list(exercices_col.find())
-    return render_template("admin/home.html", matieres=matieres, themes=themes, exercices=exercices)
+def manage_users():
+    users_col = mongo.db.users  # Assurez-vous que mongo est bien initialisé
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        user_id = request.form.get('user_id')  # peut être None pour add_user
+
+        if action == 'delete' and user_id:
+            users_col.delete_one({'_id': ObjectId(user_id)})
+            flash("Utilisateur supprimé.", "success")
+
+        elif action == 'toggle_role' and user_id:
+            user = users_col.find_one({'_id': ObjectId(user_id)})
+            if user:
+                current_role = user.get('role', 'eleve')
+                new_role = 'professeur' if current_role == 'eleve' else 'eleve'
+                users_col.update_one({'_id': ObjectId(user_id)}, {'$set': {'role': new_role}})
+                flash(f"Rôle changé en {new_role}.", "success")
+            else:
+                flash("Utilisateur introuvable.", "error")
+
+        elif action == 'reset_password' and user_id:
+            default_password = 'changeme123'
+            hashed = generate_password_hash(default_password)
+            users_col.update_one({'_id': ObjectId(user_id)}, {'$set': {'password': hashed}})
+            flash(f"Mot de passe réinitialisé à : {default_password}", "success")
+
+        elif action == 'add_user':
+            name = request.form.get('name', '').strip()
+            username = request.form.get('username', '').strip()
+            password = request.form.get('password', '')
+            role = request.form.get('role', 'eleve')
+
+            if not name or not username or not password:
+                flash("Tous les champs sont obligatoires.", "error")
+            elif users_col.find_one({'username': username}):
+                flash("Nom d'utilisateur déjà utilisé.", "error")
+            else:
+                hashed_pw = generate_password_hash(password)
+                users_col.insert_one({
+                    'name': name,
+                    'username': username,
+                    'password': hashed_pw,
+                    'role': role,
+                    'created_at': datetime.now()
+                })
+                flash(f"Utilisateur {name} ajouté.", "success")
+
+        return redirect(url_for('admin.manage_users'))
+
+    # Requête GET : affichage des utilisateurs
+    users = list(users_col.find())
+    return render_template('admin/manage_users.html', users=users)
+
 
 
 # Liste des matières
 @admin.route('/matieres')
 @admin_required
 def list_matieres():
-    matieres = list(matieres_col.find())
+    matieres = list(mongo.db.matieres.find())
     return render_template("admin/matieres_list.html", matieres=matieres)
 
 # Ajouter une matière
@@ -71,11 +113,11 @@ def add_matiere():
             flash("Le nom de la matière est obligatoire.")
             return render_template("admin/matieres_add.html")
 
-        if matieres_col.find_one({"nom": nom}):
+        if mongo.db.matieres.find_one({"nom": nom}):
             flash("Cette matière existe déjà.")
             return render_template("admin/matieres_add.html")
 
-        matieres_col.insert_one({"nom": nom, "created_at": datetime.now()})
+        mongo.db.matieres.insert_one({"nom": nom, "created_at": datetime.now()})
         flash("Matière ajoutée avec succès.")
         return redirect(url_for("admin.list_matieres"))
 
@@ -84,7 +126,7 @@ def add_matiere():
 @admin_required
 def api_get_themes_by_matiere(matiere_id):
     try:
-        themes = list(themes_col.find({'matiere_id': ObjectId(matiere_id)}))
+        themes = list(mongo.db.themes.find({'matiere_id': ObjectId(matiere_id)}))
         return jsonify([{'_id': str(t['_id']), 'nom': t['nom']} for t in themes])
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -92,7 +134,7 @@ def api_get_themes_by_matiere(matiere_id):
 @admin.route('/matieres/edit/<matiere_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_matiere(matiere_id):
-    matiere = matieres_col.find_one({"_id": ObjectId(matiere_id)})
+    matiere = mongo.db.matieres.find_one({"_id": ObjectId(matiere_id)})
     if not matiere:
         flash("Matière introuvable.")
         return redirect(url_for("admin.list_matieres"))
@@ -105,11 +147,11 @@ def edit_matiere(matiere_id):
             flash("Le nom de la matière est obligatoire.")
             return render_template("admin/matieres_edit.html", matiere=matiere)
 
-        if matieres_col.find_one({"nom": nom, "_id": {"$ne": ObjectId(matiere_id)}}):
+        if mongo.db.matieres.find_one({"nom": nom, "_id": {"$ne": ObjectId(matiere_id)}}):
             flash("Une autre matière avec ce nom existe déjà.")
             return render_template("admin/matieres_edit.html", matiere=matiere)
 
-        matieres_col.update_one(
+        mongo.db.matieres.update_one(
             {"_id": ObjectId(matiere_id)},
             {"$set": {
                 "nom": nom,
@@ -126,201 +168,250 @@ def edit_matiere(matiere_id):
 @admin.route('/matieres/delete/<matiere_id>', methods=['POST'])
 @admin_required
 def delete_matiere(matiere_id):
-    matieres_col.delete_one({"_id": ObjectId(matiere_id)})
+    mongo.db.matieres.delete_one({"_id": ObjectId(matiere_id)})
     flash("Matière supprimée.")
     return redirect(url_for("admin.list_matieres"))
 
 # Ajouter un exercice interactif
-@admin.route('/exercices')
+@admin.route('/exercices', methods=['GET'])
 @admin_required
 def list_exercices():
-    exercices = list(exercices_col.find())
-    themes_map = {str(t['_id']): t for t in themes_col.find()}
-    matieres_map = {str(m['_id']): m['nom'] for m in matieres_col.find()}
+    matieres = list(mongo.db.matieres.find())
+    matiere_id = request.args.get('matiere_id')
+    theme_id = request.args.get('theme_id')
 
+    themes = []
+    exercices = []
+    current_theme = None
+
+    # Convertir en ObjectId de manière sécurisée
+    try:
+        matiere_obj_id = ObjectId(matiere_id) if matiere_id else None
+    except Exception:
+        matiere_obj_id = None
+
+    try:
+        theme_obj_id = ObjectId(theme_id) if theme_id else None
+    except Exception:
+        theme_obj_id = None
+
+    # Charger les thèmes de la matière sélectionnée
+    if matiere_obj_id:
+        themes = list(mongo.db.themes.find({'matiere_id': matiere_obj_id}))
+
+    # Charger les exercices du thème sélectionné
+    if theme_obj_id:
+        exercices = list(mongo.db.exercices_interactifs.find({'theme_id': theme_obj_id}))
+        current_theme = mongo.db.themes.find_one({'_id': theme_obj_id})
+
+    # Création des mappings pour affichage
+    matieres_map = {str(m['_id']): m['nom'] for m in matieres}
+    themes_map = {str(t['_id']): t for t in themes}
+
+    # Annoter les exercices avec les noms de thème et matière
     for ex in exercices:
         theme = themes_map.get(str(ex.get('theme_id')))
         if theme:
-            ex['theme_nom'] = theme.get('nom', '❓Thème inconnu')
-            ex['matiere_nom'] = matieres_map.get(str(theme.get('matiere_id')), '❓Matière inconnue')
+            ex['theme_nom'] = theme.get('nom', '❓ Thème inconnu')
+            ex['matiere_nom'] = matieres_map.get(str(theme.get('matiere_id')), '❓ Matière inconnue')
         else:
-            ex['theme_nom'] = '❓Thème inconnu'
-            ex['matiere_nom'] = '❓Matière inconnue'
+            ex['theme_nom'] = '❓ Thème inconnu'
+            ex['matiere_nom'] = '❓ Matière inconnue'
 
-    return render_template('admin/exercices_list.html', exercices=exercices)
+    return render_template(
+        'admin/exercices_list.html',
+        matieres=matieres,
+        themes=themes,
+        exercices=exercices,
+        selected_matiere_id=matiere_id,
+        selected_theme_id=theme_id,
+        current_theme=current_theme,
+    )
+
 
 @admin.route('/exercice_interactif/add', methods=['GET', 'POST'])
 @admin_required
 def add_exercice_interactif():
-    matieres = list(matieres_col.find())
-    
+    matieres = list(mongo.db.matieres.find())
+
+    themes = []
+    selected_matiere_id = request.args.get('matiere_id')
+
+    if selected_matiere_id:
+        try:
+            themes = list(mongo.db.themes.find({'matiere_id': ObjectId(selected_matiere_id)}))
+        except:
+            themes = []
+
     if request.method == 'POST':
         matiere_id = request.form.get('matiere_id')
         theme_id = request.form.get('theme_id')
-        titre = request.form.get('titre')
-        question = request.form.get('question')
-        reponse_html = request.form.get('reponse_html')
-        
-        # Nettoyage HTML avec bleach
-        allowed_tags = [
-            'b', 'i', 'em', 'strong', 'u', 'br', 'p', 'div', 'span',
-            'input', 'select', 'option', 'textarea', 'label', 'ul', 'ol', 'li'
-        ]
+        titre = request.form.get('titre', '').strip()
+        question = request.form.get('question', '').strip()
+        reponse_html = request.form.get('reponse_html', '')
 
-        allowed_attributes = {
-            '*': ['class', 'style'],
-            'input': ['type', 'class', 'style', 'placeholder', 'value', 'name'],
-            'select': ['class', 'style', 'name'],
-            'option': ['value', 'selected'],
-            'textarea': ['class', 'style', 'name', 'rows', 'cols', 'placeholder'],
-            'div': ['class', 'style'],
-            'span': ['class', 'style'],
-            'p': ['class', 'style'],
-            'label': ['for', 'class', 'style']
-        }
+        if not (matiere_id and theme_id and titre and question):
+            flash("Tous les champs sont obligatoires.", "danger")
+            return render_template('admin/exercice_interactif_add.html', matieres=matieres, themes=themes)
+
+        # Nettoyage HTML
+
 
         clean_html = bleach.clean(reponse_html, tags=allowed_tags, attributes=allowed_attributes, strip=True)
 
-        # Extraction des réponses attendues avec BeautifulSoup
+        # Extraction des réponses attendues
         soup = BeautifulSoup(clean_html, 'html.parser')
-        bonnes_reponses = {}
+        reponses_attendues = {}
 
-        # Champs input
-        for input_tag in soup.find_all('input'):
-            name = input_tag.get('name')
-            value = input_tag.get('value', '')
-            if name:
-                bonnes_reponses[name] = value
+        for tag in soup.find_all(['input', 'select', 'textarea']):
+            name = tag.get('name')
+            if not name:
+                continue
+            if tag.name == 'input':
+                reponses_attendues[name] = tag.get('value', '')
+            elif tag.name == 'select':
+                selected = tag.find('option', selected=True)
+                if selected:
+                    reponses_attendues[name] = selected.get('value', '')
+            elif tag.name == 'textarea':
+                reponses_attendues[name] = tag.text.strip()
 
-        # Champs select
-        for select_tag in soup.find_all('select'):
-            name = select_tag.get('name')
-            selected_option = select_tag.find('option', selected=True)
-            if name and selected_option:
-                bonnes_reponses[name] = selected_option.get('value', '')
-
-        # Champs textarea
-        for textarea in soup.find_all('textarea'):
-            name = textarea.get('name')
-            if name:
-                bonnes_reponses[name] = textarea.text.strip()
-
-        # Création de l'exercice
-        exercice = {
+        # Insertion dans la bonne collection
+        mongo.db.exercices_interactifs.insert_one({
             'matiere_id': ObjectId(matiere_id),
             'theme_id': ObjectId(theme_id),
             'titre': titre,
             'question': question,
             'reponse_html': clean_html,
-            'reponses_attendues': bonnes_reponses,
+            'reponses_attendues': reponses_attendues,
             'created_at': datetime.now()
-        }
+        })
 
-        exercices_col.insert_one(exercice)
-        flash("Exercice interactif créé avec succès !")
-        return redirect(url_for('admin.admin_home'))
+        flash("Exercice interactif ajouté avec succès ✅", "success")
+        return redirect(url_for('admin.list_exercices'))
+
+    return render_template(
+        'admin/exercice_interactif_add.html',
+        matieres=matieres,
+        themes=themes,
+        selected_matiere_id=selected_matiere_id
+    )
+
 
     return render_template('admin/exercice_interactif_add.html', matieres=matieres)
 
-@admin.route('/exercice_interactif/delete/<exercice_id>', methods=['POST'])
+@admin.route('/exercice_interactif/delete/<exercice_id>', methods=['GET', 'POST'])
 @admin_required
 def delete_exercice_interactif(exercice_id):
-    exercice = exercices_col.find_one({"_id": ObjectId(exercice_id)})
+    exercice = mongo.db.exercices_interactifs.find_one({"_id": ObjectId(exercice_id)})
+    
     if not exercice:
         flash("Exercice introuvable.", "danger")
-        return redirect(url_for('admin.admin_home'))
+        return redirect(url_for('admin.list_exercices'))
 
-    exercices_col.delete_one({"_id": ObjectId(exercice_id)})
-    flash("Exercice supprimé avec succès.", "success")
-    return redirect(url_for('admin.admin_home'))
+    if request.method == 'POST':
+        mongo.db.exercices_interactifs.delete_one({"_id": ObjectId(exercice_id)})
+        flash("Exercice supprimé avec succès.", "success")
+        return redirect(url_for('admin.list_exercices'))
+
+    # Récupérer les infos associées
+    theme = mongo.db.themes.find_one({"_id": exercice.get("theme_id")})
+    matiere = None
+    if theme:
+        matiere = mongo.db.matieres.find_one({"_id": theme.get("matiere_id")})
+
+    return render_template(
+        'admin/exercice_interactif_delete.html',
+        exercice=exercice,
+        theme=theme,
+        matiere=matiere
+    )
+
+
+
 
 @admin.route('/exercice_interactif/edit/<exercice_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_exercice_interactif(exercice_id):
-    exercice = exercices_col.find_one({"_id": ObjectId(exercice_id)})
+    exercice = mongo.db.exercices_interactifs.find_one({'_id': ObjectId(exercice_id)})
     if not exercice:
         flash("Exercice introuvable.", "danger")
-        return redirect(url_for('admin.admin_home'))
+        return redirect(url_for('admin.list_exercices'))
 
-    matieres = list(matieres_col.find())
-    themes = list(themes_col.find({"matiere_id": exercice["matiere_id"]}))
+    matieres = list(mongo.db.matieres.find())
+    themes = []
+    selected_matiere_id = str(exercice['matiere_id']) if 'matiere_id' in exercice else None
+
+    if selected_matiere_id:
+        themes = list(mongo.db.themes.find({'matiere_id': ObjectId(selected_matiere_id)}))
 
     if request.method == 'POST':
         matiere_id = request.form.get('matiere_id')
         theme_id = request.form.get('theme_id')
-        titre = request.form.get('titre')
-        question = request.form.get('question')
-        reponse_html = request.form.get('reponse_html')
+        titre = request.form.get('titre', '').strip()
+        question = request.form.get('question', '').strip()
+        reponse_html = request.form.get('reponse_html', '')
 
-        # Nettoyage & extraction comme pour l'ajout
-        allowed_tags = [
-            'b', 'i', 'em', 'strong', 'u', 'br', 'p', 'div', 'span',
-            'input', 'select', 'option', 'textarea', 'label', 'ul', 'ol', 'li'
-        ]
+        # Vérification minimale
+        if not all([matiere_id, theme_id, titre, question]):
+            flash("Tous les champs sont obligatoires.", "danger")
+            return redirect(request.url)
 
-        allowed_attributes = {
-            '*': ['class', 'style'],
-            'input': ['type', 'class', 'style', 'placeholder', 'value', 'name'],
-            'select': ['class', 'style', 'name'],
-            'option': ['value', 'selected'],
-            'textarea': ['class', 'style', 'name', 'rows', 'cols', 'placeholder'],
-            'div': ['class', 'style'],
-            'span': ['class', 'style'],
-            'p': ['class', 'style'],
-            'label': ['for', 'class', 'style']
-        }
+        # Nettoyage HTML
+      
+        
 
         clean_html = bleach.clean(reponse_html, tags=allowed_tags, attributes=allowed_attributes, strip=True)
 
+        # Extraire les réponses attendues
         soup = BeautifulSoup(clean_html, 'html.parser')
-        bonnes_reponses = {}
+        reponses_attendues = {}
 
-        for input_tag in soup.find_all('input'):
-            name = input_tag.get('name')
-            value = input_tag.get('value', '')
-            if name:
-                bonnes_reponses[name] = value
+        for tag in soup.find_all(['input', 'select', 'textarea']):
+            name = tag.get('name')
+            if not name:
+                continue
+            if tag.name == 'input':
+                reponses_attendues[name] = tag.get('value', '')
+            elif tag.name == 'select':
+                selected = tag.find('option', selected=True)
+                if selected:
+                    reponses_attendues[name] = selected.get('value', '')
+            elif tag.name == 'textarea':
+                reponses_attendues[name] = tag.text.strip()
 
-        for select_tag in soup.find_all('select'):
-            name = select_tag.get('name')
-            selected_option = select_tag.find('option', selected=True)
-            if name and selected_option:
-                bonnes_reponses[name] = selected_option.get('value', '')
-
-        for textarea in soup.find_all('textarea'):
-            name = textarea.get('name')
-            if name:
-                bonnes_reponses[name] = textarea.text.strip()
-
-        exercices_col.update_one(
-            {"_id": ObjectId(exercice_id)},
-            {"$set": {
-                "matiere_id": ObjectId(matiere_id),
-                "theme_id": ObjectId(theme_id),
-                "titre": titre,
-                "question": question,
-                "reponse_html": clean_html,
-                "reponses_attendues": bonnes_reponses,
-                "updated_at": datetime.now()
+        # Mise à jour en base
+        mongo.db.exercices_interactifs.update_one(
+            {'_id': ObjectId(exercice_id)},
+            {'$set': {
+                'matiere_id': ObjectId(matiere_id),
+                'theme_id': ObjectId(theme_id),
+                'titre': titre,
+                'question': question,
+                'reponse_html': clean_html,
+                'reponses_attendues': reponses_attendues,
+                'updated_at': datetime.now()
             }}
         )
 
-        flash("Exercice modifié avec succès.", "success")
-        return redirect(url_for('admin.admin_home'))
+        flash("Exercice mis à jour avec succès ✅", "success")
+        return redirect(url_for('admin.list_exercices'))
 
     return render_template(
         'admin/exercice_interactif_edit.html',
         exercice=exercice,
         matieres=matieres,
-        themes=themes
+        themes=themes,
+        selected_matiere_id=selected_matiere_id
     )
+
 
 # Liste des thèmes
 @admin.route('/themes')
 @admin_required
 def list_themes():
-    themes = list(themes_col.find())
-    matieres_dict = {m["_id"]: m["nom"] for m in matieres_col.find()}
+    themes = list(mongo.db.themes.find())
+    matieres_dict = {m["_id"]: m["nom"] for m in mongo.db.matieres.find()}
     for theme in themes:
         theme["matiere_nom"] = matieres_dict.get(theme["matiere_id"], "Inconnue")
     return render_template("admin/themes_list.html", themes=themes)
@@ -328,7 +419,7 @@ def list_themes():
 @admin.route('/themes/add', methods=['GET', 'POST'])
 @admin_required
 def add_theme():
-    matieres = list(matieres_col.find())
+    matieres = list(mongo.db.matieres.find())
 
     if request.method == 'POST':
         nom = request.form.get('nom', '').strip()
@@ -340,7 +431,7 @@ def add_theme():
             return render_template('admin/themes_add.html', matieres=matieres)
 
         # Vérifier doublon
-        existing_theme = themes_col.find_one({
+        existing_theme = mongo.db.themes.find_one({
             "nom": nom,
             "matiere_id": ObjectId(matiere_id)
         })
@@ -355,7 +446,7 @@ def add_theme():
             "lessons": [],
             "created_at": datetime.now()
         }
-        themes_col.insert_one(theme)
+        mongo.db.themes.insert_one(theme)
 
         flash("Thème ajouté avec succès.")
         return redirect(url_for('admin.list_themes'))
@@ -365,12 +456,12 @@ def add_theme():
 @admin.route('/themes/edit/<theme_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_theme(theme_id):
-    theme = themes_col.find_one({"_id": ObjectId(theme_id)})
+    theme = mongo.db.themes.find_one({"_id": ObjectId(theme_id)})
     if not theme:
         flash("Thème introuvable.")
         return redirect(url_for('admin.list_themes'))
 
-    matieres = list(matieres_col.find())
+    matieres = list(mongo.db.matieres.find())
 
     if request.method == 'POST':
         nom = request.form.get("nom", "").strip()
@@ -381,7 +472,7 @@ def edit_theme(theme_id):
             return render_template("admin/themes_edit.html", theme=theme, matieres=matieres)
 
         # Vérifier doublon (autres thèmes)
-        duplicate = themes_col.find_one({
+        duplicate = mongo.db.themes.find_one({
             "nom": nom,
             "matiere_id": ObjectId(matiere_id),
             "_id": {"$ne": theme["_id"]}
@@ -390,7 +481,7 @@ def edit_theme(theme_id):
             flash("Un autre thème avec ce nom existe déjà pour cette matière.")
             return render_template("admin/themes_edit.html", theme=theme, matieres=matieres)
 
-        themes_col.update_one(
+        mongo.db.themes.update_one(
             {"_id": ObjectId(theme_id)},
             {"$set": {
                 "nom": nom,
@@ -406,12 +497,12 @@ def edit_theme(theme_id):
 @admin.route('/themes/delete/<theme_id>', methods=['POST'])
 @admin_required
 def delete_theme(theme_id):
-    theme = themes_col.find_one({"_id": ObjectId(theme_id)})
+    theme = mongo.db.themes.find_one({"_id": ObjectId(theme_id)})
     if not theme:
         flash("Thème introuvable.")
         return redirect(url_for('admin.list_themes'))
 
-    themes_col.delete_one({"_id": ObjectId(theme_id)})
+    mongo.db.themes.delete_one({"_id": ObjectId(theme_id)})
     flash("Thème supprimé avec succès.")
     return redirect(url_for('admin.list_themes'))
 
@@ -421,7 +512,7 @@ def delete_theme(theme_id):
 @admin.route('/lesson/add', methods=['GET', 'POST'])
 @admin_required
 def add_lesson():
-    matieres = list(matieres_col.find())
+    matieres = list(mongo.db.matieres.find())
 
     if request.method == 'POST':
         matiere_id = request.form.get('matiere_id')
@@ -452,7 +543,7 @@ def add_lesson():
             "created_at": datetime.now()
         }
 
-        themes_col.update_one(
+        mongo.db.themes.update_one(
             {"_id": ObjectId(theme_id)},
             {"$push": {"lessons": lesson_obj}}
         )
@@ -466,7 +557,7 @@ def add_lesson():
 @admin.route('/lecon/edit/<theme_id>/<int:index>', methods=["GET", "POST"])
 @admin_required
 def edit_lecon(theme_id, index):
-    theme = themes_col.find_one({"_id": ObjectId(theme_id)})
+    theme = mongo.db.themes.find_one({"_id": ObjectId(theme_id)})
     if not theme:
         flash("Thème introuvable.")
         return redirect(url_for("admin.list_themes"))
@@ -498,7 +589,7 @@ def edit_lecon(theme_id, index):
             flash("Extension de fichier non autorisée.")
             return render_template("admin/lesson_edit.html", theme=theme, lesson=lesson)
 
-        themes_col.update_one({"_id": ObjectId(theme_id)}, {"$set": {"lessons": lessons}})
+        mongo.db.themes.update_one({"_id": ObjectId(theme_id)}, {"$set": {"lessons": lessons}})
         flash("Leçon mise à jour avec succès.")
         return redirect(url_for("admin.list_themes"))
 
@@ -508,7 +599,7 @@ def edit_lecon(theme_id, index):
 @admin.route('/lecon/delete/<theme_id>/<int:index>', methods=["POST"])
 @admin_required
 def delete_lecon(theme_id, index):
-    theme = themes_col.find_one({"_id": ObjectId(theme_id)})
+    theme = mongo.db.themes.find_one({"_id": ObjectId(theme_id)})
     if not theme:
         flash("Thème introuvable.")
         return redirect(url_for("admin.list_themes"))
@@ -519,7 +610,80 @@ def delete_lecon(theme_id, index):
         return redirect(url_for("admin.list_themes"))
 
     del lessons[index]
-    themes_col.update_one({"_id": ObjectId(theme_id)}, {"$set": {"lessons": lessons}})
+    mongo.db.themes.update_one({"_id": ObjectId(theme_id)}, {"$set": {"lessons": lessons}})
 
     flash("Leçon supprimée avec succès.")
     return redirect(url_for("admin.list_themes"))
+
+
+@admin.route('/professeurs')
+@admin_required
+def list_professeurs():
+    professeurs = list(mongo.db.users.find({"role": "professeur"}))
+    return render_template("admin/professeurs_list.html", professeurs=professeurs)
+
+
+@admin.route('/professeurs/add', methods=['GET', 'POST'])
+@admin_required
+def add_professeur():
+    if request.method == 'POST':
+        nom = request.form.get('nom', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+
+        if not nom or not email or not password:
+            flash("Tous les champs sont obligatoires.")
+            return render_template('admin/professeurs_add.html')
+
+        if mongo.db.users.find_one({"email": email}):
+            flash("Un utilisateur avec cet e-mail existe déjà.")
+            return render_template('admin/professeurs_add.html')
+
+        # Mot de passe en clair (à sécuriser avec hash plus tard si non déjà fait ailleurs)
+        user = {
+            "nom": nom,
+            "email": email,
+            "password": password,
+            "role": "professeur",
+            "created_at": datetime.now()
+        }
+        mongo.db.users.insert_one(user)
+        flash("Professeur ajouté avec succès.")
+        return redirect(url_for('admin.list_professeurs'))
+
+    return render_template('admin/professeurs_add.html')
+
+@admin.route('/professeurs/edit/<user_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_professeur(user_id):
+    professeur = mongo.db.users.find_one({"_id": ObjectId(user_id), "role": "professeur"})
+    if not professeur:
+        flash("Professeur introuvable.")
+        return redirect(url_for('admin.list_professeurs'))
+
+    if request.method == 'POST':
+        nom = request.form.get('nom', '').strip()
+        email = request.form.get('email', '').strip()
+
+        if not nom or not email:
+            flash("Tous les champs sont obligatoires.")
+            return render_template('admin/professeurs_edit.html', professeur=professeur)
+
+        mongo.db.users.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"nom": nom, "email": email, "updated_at": datetime.now()}}
+        )
+        flash("Professeur mis à jour.")
+        return redirect(url_for('admin.list_professeurs'))
+
+    return render_template('admin/professeurs_edit.html', professeur=professeur)
+
+@admin.route('/professeurs/delete/<user_id>', methods=['POST'])
+@admin_required
+def delete_professeur(user_id):
+    result = mongo.db.users.delete_one({"_id": ObjectId(user_id), "role": "professeur"})
+    if result.deleted_count == 0:
+        flash("Suppression impossible : professeur introuvable.")
+    else:
+        flash("Professeur supprimé avec succès.")
+    return redirect(url_for('admin.list_professeurs'))

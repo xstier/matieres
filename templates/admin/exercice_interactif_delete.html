@@ -1,0 +1,27 @@
+{% extends "base.html" %} {% block content %}
+<h2>Confirmation de suppression</h2>
+
+<p>Voulez-vous vraiment supprimer l'exercice suivant ?</p>
+
+<ul>
+  <li><strong>Titre :</strong> {{ exercice_ineteractif.titre }}</li>
+  <li><strong>Thème :</strong> {{ theme.nom if theme else "Inconnu" }}</li>
+  <li>
+    <strong>Matière :</strong> {{ matiere.nom if matiere else "Inconnue" }}
+  </li>
+</ul>
+
+<form
+  method="post"
+  action="{{ url_for('admin.delete_exercice_interactif', exercice_id=exercice._id) }}"
+>
+  <button type="submit" style="color: white; background-color: red">
+    ✅ Oui, supprimer
+  </button>
+  <a
+    href="{{ url_for('admin.list_exercices', matiere_id=matiere._id|string, theme_id=theme._id|string) }}"
+  >
+    ❌ Annuler
+  </a>
+</form>
+{% endblock %}

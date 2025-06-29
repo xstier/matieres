@@ -1,47 +1,63 @@
-{% extends "base.html" %} {% block content %}
-<div class="container mt-4">
-  <h2>📘 Liste des exercices interactifs</h2>
+{% extends "base.html" %}
 
-  <table class="table table-bordered table-hover">
-    <thead class="table-light">
-      <tr>
-        <th>Titre</th>
-        <th>Matière</th>
-        <th>Thème</th>
-        <th>Date</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for ex in exercices %}
-      <tr>
-        <td>{{ ex.titre }}</td>
-        <td>{{ ex.matiere_nom }}</td>
-        <td>{{ ex.theme_nom }}</td>
-        <td>
-          {{ ex.created_at.strftime('%d/%m/%Y') if ex.created_at else '—' }}
-        </td>
-        <td>
-          <a
-            href="{{ url_for('admin.edit_exercice_interactif', exercice_id=ex._id) }}"
-            class="btn btn-sm btn-primary"
-            >✏️ Modifier</a
-          >
-          <form
-            method="POST"
-            action="{{ url_for('admin.delete_exercice_interactif', exercice_id=ex._id) }}"
-            class="d-inline"
-            onsubmit="return confirm('Supprimer cet exercice ?');"
-          >
-            <button type="submit" class="btn btn-sm btn-danger">
-              🗑️ Supprimer
-            </button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+{% block content %}
+<h2>Gestion des exercices</h2>
 
-{%endblock%}
+<form method="GET" action="{{ url_for('admin.list_exercices') }}">
+  <label for="matiere">Choisir une matière :</label>
+  <select id="matiere" name="matiere_id" onchange="this.form.submit()">
+    <option value="">-- Sélectionnez une matière --</option>
+    {% for matiere in matieres %}
+      <option value="{{ matiere._id }}" {% if matiere._id|string == selected_matiere_id %}selected{% endif %}>
+        {{ matiere.nom }}
+      </option>
+    {% endfor %}
+  </select>
+</form>
+
+{% if themes %}
+<form method="GET" action="{{ url_for('admin.list_exercices') }}">
+  <input type="hidden" name="matiere_id" value="{{ selected_matiere_id }}">
+  <label for="theme">Choisir un thème :</label>
+  <select id="theme" name="theme_id" onchange="this.form.submit()">
+    <option value="">-- Sélectionnez un thème --</option>
+    {% for theme in themes %}
+      <option value="{{ theme._id }}" {% if theme._id|string == selected_theme_id %}selected{% endif %}>
+        {{ theme.nom }}
+      </option>
+    {% endfor %}
+  </select>
+</form>
+{% endif %}
+
+{% if exercices %}
+<h3>Exercices du thème : {{ current_theme.nom if current_theme else '–' }}</h3>
+<table border="1" cellpadding="6">
+  <thead>
+    <tr>
+      <th>Titre</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ex in exercices %}
+    <tr>
+      <td>{{ ex.titre }}</td>
+      <td>
+        <!-- Liens ou boutons pour modifier / supprimer l'exercice -->
+        <a href="{{ url_for('admin.edit_exercice_interactif', exercice_id=ex._id) }}">Modifier</a> |
+        <form method="POST" action="{{ url_for('admin.delete_exercice_interactif', exercice_id=ex._id) }}" style="display:inline;" onsubmit="return confirm('Supprimer cet exercice ?')">
+          <input type="hidden" name="exercice_id" value="{{ ex._id }}">
+          <button type="submit">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% elif selected_theme_id %}
+<p>Aucun exercice trouvé pour ce thème.</p>
+{% endif %}
+
+{% endblock %}
+

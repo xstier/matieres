@@ -2,27 +2,21 @@ document.addEventListener("DOMContentLoaded", function () {
   const previewZone = document.getElementById("preview_zone");
   const hiddenField = document.getElementById("reponse_html");
 
-  // Synchroniser le contenu avant soumission
+  // Avant la soumission du formulaire, nettoyer le HTML
   const form = document.querySelector("form");
   form.addEventListener("submit", function () {
-    // Clone pour ne pas modifier l'affichage
+    // Cloner pour ne pas modifier l'affichage
     const clone = previewZone.cloneNode(true);
 
-    // Supprimer tous les boutons "Modifier"
+    // Supprimer tous les boutons <button> et leur contenu
     const buttons = clone.querySelectorAll("button");
-    buttons.forEach((btn) => {
-      if (btn.textContent.includes("Modifier")) {
-        btn.remove();
-      }
-    });
+    buttons.forEach((btn) => btn.remove());
 
-    // Nettoyer les attributs inutiles si besoin ici
-
-    // Transférer dans le champ caché
+    // Supprimer aussi les espaces vides résiduels s'il y en a
     hiddenField.value = clone.innerHTML.trim();
   });
 
-  // Ajouter boutons Modifier aux selects existants
+  // Ajouter les boutons "Modifier" aux <select> existants
   enhanceSelects(previewZone);
 });
 
@@ -63,7 +57,7 @@ function addSelect() {
   document.getElementById("preview_zone").appendChild(div);
 }
 
-// ========== AJOUT DES BOUTONS MODIFIER ==========
+// ========== MISE À JOUR DES <SELECT> EXISTANTS ==========
 
 function enhanceSelects(container) {
   const selects = container.querySelectorAll("select");
@@ -86,7 +80,7 @@ function enhanceSelects(container) {
   });
 }
 
-// ========== MODIFICATION DYNAMIQUE DES OPTIONS ==========
+// ========== MODIFICATION DES OPTIONS DU <SELECT> ==========
 
 function editSelectOptions(button) {
   const select = button.previousElementSibling;
@@ -96,6 +90,7 @@ function editSelectOptions(button) {
   const currentOptions = Array.from(select.options)
     .map((opt) => opt.value)
     .join(", ");
+
   const userInput = prompt(
     "Modifier les options (séparées par des virgules) :",
     currentOptions
@@ -107,7 +102,9 @@ function editSelectOptions(button) {
       .map((opt) => opt.trim())
       .filter((opt) => opt !== "");
 
+    // Vider les anciennes options
     select.innerHTML = "";
+
     newOptions.forEach((opt) => {
       const optionEl = document.createElement("option");
       optionEl.value = opt;

@@ -5,45 +5,55 @@ from pymongo import MongoClient
 
 auth = Blueprint('auth', __name__)
 
+# Connexion à MongoDB
 client = MongoClient("mongodb://localhost:27017/")
 db = client["matieres"]
 users_col = db["users"]
 
-from flask import flash
-
+# === ROUTE DE CONNEXION ===
 @auth.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
 
+        if not username or not password:
+            flash("Veuillez remplir tous les champs.")
+            return render_template("login.html")
+
         user = users_col.find_one({"username": username})
         if user and check_password_hash(user["password"], password):
             session.clear()
             session["username"] = user["username"]
-            session["name"] = user["name"]
-            session["role"] = user["role"]
+            session["name"] = user.get("name", "")
+            
+            role = user.get("role", "user")
+            session["role"] = role
+            session["admin"] = role.lower() == "admin"
 
-            if user["role"] == "admin":
-                session["admin"] = True
-                return redirect(url_for("admin.admin_home"))  # <- admin vers admin
-            else:
-                session["admin"] = False  # <- AJOUT important
-                return redirect(url_for("index"))  # <- utilisateur normal vers /
+            print("Utilisateur:", user)
+            print("Role détecté:", role)
+            print("Admin ?:", session["admin"])
+
+            if session["admin"]:
+                return redirect(url_for("admin.admin_home"))
+            return redirect(url_for("index"))
         else:
-            flash("Identifiants incorrects.")
+            flash("Nom d'utilisateur ou mot de passe incorrect.")
+            return render_template("login.html")
+
     return render_template("login.html")
 
 
-
-
-
-
+# === ROUTE DE DÉCONNEXION ===
 @auth.route("/logout")
 def logout():
     session.clear()
+    flash("Vous avez été déconnecté.")
     return redirect(url_for("index"))
 
+
+# === ROUTE D'INSCRIPTION ===
 @auth.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -52,12 +62,16 @@ def register():
         password = request.form.get("password", "")
         role = request.form.get("role", "user")
 
-        # Vérifier si utilisateur existe déjà
-        if users_col.find_one({"username": username}):
-            flash("Nom d'utilisateur déjà utilisé.")
+        if not name or not username or not password:
+            flash("Tous les champs sont obligatoires.")
             return render_template("register.html", name=name, username=username)
 
-        # Seul admin connecté peut créer un admin
+        # Vérification si l'utilisateur existe
+        if users_col.find_one({"username": username}):
+            flash("Ce nom d'utilisateur est déjà pris.")
+            return render_template("register.html", name=name, username=username)
+
+        # Seul un admin déjà connecté peut créer un admin
         if not session.get("admin"):
             role = "user"
 
@@ -67,21 +81,19 @@ def register():
             "username": username,
             "password": hashed_pw,
             "role": role,
-            "created_at": datetime.now()
+            "created_at": datetime.utcnow()
         })
 
-        # Connexion automatique après inscription
+        # Connexion automatique
         session.clear()
         session["username"] = username
-        session["role"] = role
         session["name"] = name
-        if role == "admin":
-            session["admin"] = True
+        session["role"] = role
+        session["admin"] = role == "admin"
+
+        flash("Inscription réussie.")
+        if session["admin"]:
             return redirect(url_for("admin.admin_home"))
-        else:
-            return redirect(url_for("index"))
+        return redirect(url_for("index"))
 
     return render_template("register.html")
-
-
-

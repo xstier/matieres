@@ -7,6 +7,68 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
     />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 400px;
+        margin: 40px auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+        border-radius: 8px;
+      }
+
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+
+      label {
+        font-weight: bold;
+      }
+
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        margin-top: 4px;
+        margin-bottom: 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      button {
+        width: 100%;
+        padding: 10px;
+        background-color: #1976d2;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #1565c0;
+      }
+
+      .flashes {
+        list-style: none;
+        padding: 0;
+      }
+
+      .flashes li {
+        background-color: #ffcdd2;
+        color: #b71c1c;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-left: 5px solid #b71c1c;
+        border-radius: 4px;
+      }
+
+      .register-link {
+        text-align: center;
+        margin-top: 15px;
+      }
+    </style>
   </head>
   <body>
     <h1>Se connecter</h1>
@@ -20,7 +82,7 @@
     {% endif %} {% endwith %}
 
     <form method="POST" action="{{ url_for('auth.login') }}">
-      <label for="username">Nom d'utilisateur :</label><br />
+      <label for="username">Nom d'utilisateur :</label>
       <input
         type="text"
         id="username"
@@ -28,23 +90,25 @@
         required
         autofocus
         autocomplete="username"
-      /><br /><br />
+      />
 
-      <label for="password">Mot de passe :</label><br />
+      <label for="password">Mot de passe :</label>
       <input
         type="password"
         id="password"
         name="password"
         required
         autocomplete="current-password"
-      /><br /><br />
+      />
 
       <button type="submit">Se connecter</button>
     </form>
 
-    <p>
-      Pas encore de compte ?
-      <a href="{{ url_for('auth.register') }}">Inscrivez-vous ici</a>.
-    </p>
+    <div class="register-link">
+      <p>
+        Pas encore de compte ?
+        <a href="{{ url_for('auth.register') }}">Inscrivez-vous ici</a>.
+      </p>
+    </div>
   </body>
 </html>

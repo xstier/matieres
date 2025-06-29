@@ -66,6 +66,20 @@
         </div>
       </div>
     </div>
+
+    <div class="col-md-4">
+      <div class="card border-secondary h-100">
+        <div class="card-body">
+          <h5 class="card-title">Gérer les utilisateur</h5>
+          <p class="card-text">Ajouter modifier supprimer un user.</p>
+          <a
+            href="{{ url_for('admin.manage_users') }}"
+            class="btn btn-secondary"
+            >Ajouter</a
+          >
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

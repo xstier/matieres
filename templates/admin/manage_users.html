@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Gestion des utilisateurs</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <h1>Gestion des utilisateurs</h1>
+
+    <!-- Messages flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <ul class="flashes">
+      {% for category, message in messages %}
+      <li class="{{ category }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %} {% endwith %}
+
+    <!-- Formulaire ajout -->
+    <h2>Ajouter un utilisateur</h2>
+    <form method="POST" style="margin-bottom: 2em">
+      <input type="hidden" name="action" value="add_user" />
+      <label>Nom :</label><br />
+      <input type="text" name="name" required /><br />
+      <label>Nom d'utilisateur :</label><br />
+      <input type="text" name="username" required /><br />
+      <label>Mot de passe :</label><br />
+      <input type="password" name="password" required /><br />
+      <label>Rôle :</label><br />
+      <select name="role">
+        <option value="eleve">Élève</option>
+        <option value="professeur">Professeur</option>
+        <option value="admin">Administrateur</option></select
+      ><br /><br />
+      <button type="submit">➕ Ajouter utilisateur</button>
+    </form>
+
+    <!-- Liste utilisateurs -->
+    <h2>Liste des utilisateurs</h2>
+    <table border="1" cellpadding="8">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Nom d'utilisateur</th>
+          <th>Rôle</th>
+          <th>Date création</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user["name"] }}</td>
+          <td>{{ user["username"] }}</td>
+          <td>{{ user["role"] }}</td>
+          <td>
+            {{ user["created_at"].strftime('%Y-%m-%d %H:%M') if
+            user.get("created_at") else '–' }}
+          </td>
+          <td>
+            <!-- Changer rôle -->
+            <form method="POST" style="display: inline">
+              <input type="hidden" name="action" value="toggle_role" />
+              <input type="hidden" name="user_id" value="{{ user['_id'] }}" />
+              <button type="submit">Changer rôle</button>
+            </form>
+
+            <!-- Supprimer -->
+            <form
+              method="POST"
+              style="display: inline"
+              onsubmit="return confirm('Supprimer cet utilisateur ?')"
+            >
+              <input type="hidden" name="action" value="delete" />
+              <input type="hidden" name="user_id" value="{{ user['_id'] }}" />
+              <button type="submit">🗑 Supprimer</button>
+            </form>
+
+            <!-- Réinitialiser MDP -->
+            <form
+              method="POST"
+              style="display: inline"
+              onsubmit="return confirm('Réinitialiser le mot de passe ?')"
+            >
+              <input type="hidden" name="action" value="reset_password" />
+              <input type="hidden" name="user_id" value="{{ user['_id'] }}" />
+              <button type="submit">🔑 Réinit. MDP</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <br />
+    <a href="{{ url_for('admin.admin_home') }}">← Retour à l’admin</a>
+  </body>
+</html>

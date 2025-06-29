@@ -1,0 +1,27 @@
+{% extends 'base.html' %} {% block content %}
+<h2>Modifier le professeur</h2>
+
+<form method="POST">
+  <label for="nom">Nom :</label><br />
+  <input
+    type="text"
+    id="nom"
+    name="nom"
+    value="{{ professeur.nom }}"
+    required
+  /><br /><br />
+
+  <label for="email">Email :</label><br />
+  <input
+    type="email"
+    id="email"
+    name="email"
+    value="{{ professeur.email }}"
+    required
+  /><br /><br />
+
+  <button type="submit">Enregistrer</button>
+</form>
+
+<a href="{{ url_for('admin.list_professeurs') }}">⬅ Retour à la liste</a>
+{% endblock %}

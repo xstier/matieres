@@ -21,8 +21,8 @@
       <div class="logo fs-4 fw-bold">MonSite</div>
       <nav class="nav nav-matieres">
         <ul id="matiere-list">
+          {% for matiere in matieres %}
           <li>
-            {% for matiere in matieres %}
             <a
               class="nav-link"
               href="{{ url_for('afficher_themes', matiere_id=matiere._id) }}"

@@ -1,0 +1,38 @@
+{% extends 'base.html' %} {% block content %}
+<h2>Liste des Professeurs</h2>
+
+<a href="{{ url_for('admin.add_professeur') }}">➕ Ajouter un professeur</a>
+
+<table border="1" cellpadding="8" cellspacing="0">
+  <thead>
+    <tr>
+      <th>Nom</th>
+      <th>Email</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for prof in professeurs %}
+    <tr>
+      <td>{{ prof.nom }}</td>
+      <td>{{ prof.email }}</td>
+      <td>
+        <a href="{{ url_for('admin.edit_professeur', user_id=prof._id) }}"
+          >Modifier</a
+        >
+        |
+        <form
+          action="{{ url_for('admin.delete_professeur', user_id=prof._id) }}"
+          method="POST"
+          style="display: inline"
+          onsubmit="return confirm('Confirmer la suppression ?');"
+        >
+          <button type="submit">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

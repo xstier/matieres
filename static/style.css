@@ -56,7 +56,9 @@ header {
   flex-flow: row wrap;
   align-content: center;
   justify-content: center;
+  list-style-type: none;
 }
+
 .nav-matieres a:hover,
 .nav-matieres a:focus {
   background-color: #0d6efd; /* bleu Bootstrap */
@@ -253,4 +255,14 @@ select.interactive-select {
   min-width: 80px;
   max-width: 250px;
   font-size: 1rem;
+}
+.flashes {
+  list-style: none;
+  padding: 0;
+}
+.flashes li.success {
+  color: green;
+}
+.flashes li.error {
+  color: red;
 }
