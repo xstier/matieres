@@ -1,0 +1,8 @@
+{% extends "base.html" %} {% block content %}
+<h2>Accueil Professeur</h2>
+
+<ul>
+  <li><a href="{{ url_for('prof.add_devoir') }}">Créer un devoir</a></li>
+  <li><a href="{{ url_for('prof.liste_devoirs') }}">Voir les devoirs</a></li>
+</ul>
+{% endblock %}

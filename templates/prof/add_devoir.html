@@ -1,0 +1,49 @@
+{% extends "base.html" %} {% block content %}
+<h2>Créer un nouveau devoir</h2>
+
+<form method="POST" action="{{ url_for('prof.save_devoir') }}">
+  <div>
+    <label for="titre">Titre du devoir :</label>
+    <input type="text" name="titre" required />
+  </div>
+
+  <hr />
+
+  <h3>Exercices</h3>
+  <div class="add_devoir">
+    {% for ex in exercices %}
+    <div
+      data-exercice-container
+      style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px"
+    >
+      <label>
+        <input type="checkbox" name="exercice_id" value="{{ ex._id }}" />
+        <strong>{{ ex.titre }}</strong> (Thème : {{ ex.nom_theme }}, Matière :
+        {{ ex.nom_matiere }})
+      </label>
+      <div class="tentatives-container" style="margin-top: 5px">
+        <label>
+          Tentatives autorisées :
+          <input
+            type="number"
+            name="tentatives"
+            value="1"
+            min="1"
+            max="10"
+            style="width: 60px"
+          />
+        </label>
+      </div>
+    </div>
+    {% else %}
+    <p>Aucun exercice disponible.</p>
+    {% endfor %}
+  </div>
+
+  <hr />
+
+  <button type="submit">Créer le devoir</button>
+</form>
+{% block script %}
+<script src="{{ url_for('static', filename='js/devoirs.js') }}"></script>
+{% endblock %} {% endblock %}

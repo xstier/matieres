@@ -1,0 +1,74 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-4">
+  <h2>Modifier le devoir</h2>
+
+  <form method="POST">
+    <div class="mb-3">
+      <label for="titre" class="form-label">Titre du devoir</label>
+      <input
+        type="text"
+        class="form-control"
+        name="titre"
+        value="{{ devoir.titre }}"
+        required
+      />
+    </div>
+
+    <h4>Exercices sélectionnés</h4>
+    {% for ex in exercices_selectionnes %}
+    <div class="form-check mb-2">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        name="exercice_id"
+        value="{{ ex._id }}"
+        id="ex-{{ ex._id }}"
+        checked
+      />
+      <label class="form-check-label" for="ex-{{ ex._id }}">
+        <strong>{{ ex.titre }}</strong> — {{ ex.theme }} / {{ ex.matiere }}
+      </label>
+      <input
+        type="number"
+        name="tentatives"
+        value="{{ ex.tentatives_autorisees }}"
+        min="1"
+        max="10"
+        class="form-control mt-1"
+        style="max-width: 100px"
+      />
+    </div>
+    {% endfor %}
+
+    <h4 class="mt-4">Autres exercices</h4>
+    {% for ex in exercices_non_selectionnes %}
+    <div class="form-check mb-2">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        name="exercice_id"
+        value="{{ ex._id }}"
+        id="ex-{{ ex._id }}"
+      />
+      <label class="form-check-label" for="ex-{{ ex._id }}">
+        <strong>{{ ex.titre }}</strong> — {{ ex.theme }} / {{ ex.matiere }}
+      </label>
+      <input
+        type="number"
+        name="tentatives"
+        value="1"
+        min="1"
+        max="10"
+        class="form-control mt-1"
+        style="max-width: 100px"
+      />
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-success mt-3">Enregistrer</button>
+    <a href="{{ url_for('prof.liste_devoirs') }}" class="btn btn-secondary mt-3"
+      >Annuler</a
+    >
+  </form>
+</div>
+{% endblock %}

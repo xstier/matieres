@@ -6,6 +6,8 @@ from pymongo import MongoClient
 auth = Blueprint('auth', __name__)
 
 # Connexion à MongoDB
+
+
 client = MongoClient("mongodb://localhost:27017/")
 db = client["matieres"]
 users_col = db["users"]
@@ -24,25 +26,32 @@ def login():
         user = users_col.find_one({"username": username})
         if user and check_password_hash(user["password"], password):
             session.clear()
+            
+            session["user_id"] = str(user["_id"])
+
             session["username"] = user["username"]
             session["name"] = user.get("name", "")
-            
-            role = user.get("role", "user")
+            role = user.get("role", "user").lower()
+
             session["role"] = role
-            session["admin"] = role.lower() == "admin"
+            session["admin"] = role == "admin"
 
             print("Utilisateur:", user)
-            print("Role détecté:", role)
+            print("Rôle détecté:", role)
             print("Admin ?:", session["admin"])
 
-            if session["admin"]:
+            if role == "admin":
                 return redirect(url_for("admin.admin_home"))
-            return redirect(url_for("index"))
+            elif role == "professeur":
+                return redirect(url_for("prof.admin_prof"))
+            else:
+                return redirect(url_for("index"))
         else:
             flash("Nom d'utilisateur ou mot de passe incorrect.")
             return render_template("login.html")
 
     return render_template("login.html")
+
 
 
 # === ROUTE DE DÉCONNEXION ===
@@ -81,7 +90,7 @@ def register():
             "username": username,
             "password": hashed_pw,
             "role": role,
-            "created_at": datetime.utcnow()
+            "created_at": datetime.now()
         })
 
         # Connexion automatique

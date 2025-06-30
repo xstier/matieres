@@ -1,74 +1,77 @@
-{% extends "base.html" %} {% block content %} {% with messages =
-get_flashed_messages() %} {% if messages %}
-<div class="alert alert-success" role="alert">
-  {% for message in messages %} {{ message }} {% endfor %}
-</div>
-{% endif %} {% endwith %}
+{% extends "base.html" %}
+{% block content %}
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="alert alert-success" role="alert">
+      {% for message in messages %}
+        {{ message }}
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
 
 <div class="container mt-5">
   <h2>Ajouter une leçon</h2>
 
-  <form
-    action="{{ url_for('admin.add_lesson') }}"
-    method="POST"
-    enctype="multipart/form-data"
-  >
-    <!-- Choix de la matière -->
+  <form action="{{ url_for('admin.add_lesson') }}" method="POST" enctype="multipart/form-data">
+    
+    <!-- Matière -->
     <div class="mb-3">
-      <label for="matiere" class="form-label">Matière</label>
-      <select id="matiere" name="matiere_id" class="form-select" required>
+      <label for="matiere-select" class="form-label">Matière</label>
+      <select id="matiere-select" name="matiere_id" class="form-select" required>
         <option value="">-- Choisir une matière --</option>
         {% for matiere in matieres %}
-        <option value="{{ matiere._id}}">{{ matiere.nom }}</option>
+          <option value="{{ matiere._id }}" {% if selected_matiere_id == matiere._id|string %}selected{% endif %}>
+            {{ matiere.nom }}
+          </option>
         {% endfor %}
       </select>
     </div>
 
-    <!-- Choix du thème (chargé dynamiquement via JS) -->
+    <!-- Thème -->
     <div class="mb-3">
-      <label for="theme" class="form-label">Thème</label>
-      <select id="theme" name="theme_id" class="form-select" required>
+      <label for="theme-select" class="form-label">Thème</label>
+      <select id="theme-select" name="theme_id" class="form-select" required>
         <option value="">-- Choisir un thème --</option>
+        {% if themes %}
+          {% for theme in themes %}
+            <option value="{{ theme._id }}" {% if selected_theme_id == theme._id|string %}selected{% endif %}>
+              {{ theme.nom }}
+            </option>
+          {% endfor %}
+        {% endif %}
       </select>
     </div>
 
-    <!-- Titre de la leçon -->
+    <!-- Titre -->
     <div class="mb-3">
       <label for="titre" class="form-label">Titre de la leçon</label>
-      <input
-        type="text"
-        class="form-control"
-        id="titre"
-        name="titre"
-        required
-      />
+      <input type="text" class="form-control" id="titre" name="titre" required />
     </div>
 
-    <!-- Contenu texte (optionnel si fichier) -->
+    <!-- Description -->
     <div class="mb-3">
-      <label for="contenu" class="form-label"
-        >Description (obligatoire si aucun fichier)</label
-      >
-      <textarea
-        class="form-control"
-        id="contenu"
-        name="contenu"
-        rows="4"
-      ></textarea>
+      <label for="contenu" class="form-label">Description (obligatoire si aucun fichier)</label>
+      <textarea class="form-control" id="contenu" name="contenu" rows="4"></textarea>
     </div>
 
-    <!-- Fichier attaché (optionnel si contenu texte) -->
+    <!-- Fichier -->
     <div class="mb-3">
       <label for="fichier" class="form-label">Fichier (PDF, DOCX, DOC)</label>
-      <input type="file" class="form-control" id="fichier" name="fichier" />
+      <input type="file" class="form-control" id="file-upload" name="fichier" />
     </div>
 
-    <!-- Bouton -->
     <button type="submit" class="btn btn-primary">Ajouter la leçon</button>
   </form>
 </div>
 
-<!-- JS pour charger les thèmes dynamiquement -->
-<script src="{{ url_for('static', filename='js/theme-loader.js') }}"></script>
+{% block script %}
+  
+  <script src="{{ url_for('static', filename='js/exercice_creator.js') }}"></script>
+{% endblock %}
 
 {% endblock %}
+
+
+

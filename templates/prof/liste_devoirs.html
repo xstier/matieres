@@ -1,0 +1,52 @@
+{% extends "base.html" %} {% block content %}
+<div class="container">
+  <h2 class="mb-4">Liste des devoirs</h2>
+
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if
+  messages %} {% for category, message in messages %}
+  <div class="alert alert-{{ category }}">{{ message }}</div>
+  {% endfor %} {% endif %} {% endwith %}
+
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Titre</th>
+        <th>Auteur</th>
+        <th>Date de création</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for devoir in devoirs %}
+      <tr>
+        <td>{{ devoir.titre }}</td>
+        <td>{{ devoir.auteur_username }}</td>
+        <td>{{ devoir.date_affichee }}</td>
+        <td>
+          <a
+            href="{{ url_for('prof.edit_devoir_get', devoir_id=devoir._id|string) }}"
+            class="btn btn-sm btn-primary"
+          >
+            Modifier
+          </a>
+          <form
+            method="POST"
+            action="{{ url_for('prof.delete_devoir', devoir_id=devoir._id|string) }}"
+            style="display: inline"
+            onsubmit="return confirm('Supprimer ce devoir ?');"
+          >
+            <button type="submit" class="btn btn-sm btn-danger">
+              Supprimer
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="4">Aucun devoir trouvé.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

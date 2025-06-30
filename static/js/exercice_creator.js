@@ -10,6 +10,136 @@ document.addEventListener("DOMContentLoaded", function () {
   const form = document.querySelector("form");
 
   let fieldCounter = 0;
+
+  if (addChoicesBtn) {
+    addChoicesBtn.addEventListener("click", () => {
+      const type = prompt(
+        "Tapez 'select' pour liste déroulante ou 'checkbox' pour cases à cocher:",
+        "select"
+      );
+      if (!type || (type !== "select" && type !== "checkbox")) {
+        alert("Type invalide. Utilisez 'select' ou 'checkbox'.");
+        return;
+      }
+
+      const choices = prompt("Entrez les choix séparés par des virgules :");
+      if (!choices) return;
+      const options = choices.split(",").map((opt) => opt.trim());
+      const name = getUniqueFieldName();
+
+      if (type === "select") {
+        // Création du select (comme avant)
+        const select = document.createElement("select");
+        select.className = "interactive-select";
+        select.name = name;
+
+        const firstOption = document.createElement("option");
+        firstOption.value = "";
+        firstOption.disabled = true;
+        firstOption.selected = true;
+        firstOption.textContent = "- sélectionnez la bonne réponse -";
+        select.appendChild(firstOption);
+
+        options.forEach((opt) => {
+          const option = document.createElement("option");
+          option.value = opt;
+          option.textContent = opt;
+          select.appendChild(option);
+        });
+
+        select.addEventListener("change", () => {
+          for (const option of select.options)
+            option.removeAttribute("selected");
+          select.options[select.selectedIndex].setAttribute(
+            "selected",
+            "selected"
+          );
+        });
+
+        adjustSelectWidth(select);
+        insertNodeAtCursor(select);
+        insertNodeAtCursor(document.createTextNode(" "));
+      } else if (type === "checkbox") {
+        // Création d’un groupe de checkbox
+        options.forEach((opt, i) => {
+          const label = document.createElement("label");
+          label.style.marginRight = "10px";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.name = name; // même name pour grouper
+          checkbox.value = opt;
+          checkbox.className = "interactive-checkbox";
+
+          label.appendChild(checkbox);
+          label.appendChild(document.createTextNode(" " + opt));
+
+          insertNodeAtCursor(label);
+          insertNodeAtCursor(document.createTextNode(" "));
+        });
+      }
+    });
+  }
+
+  // Adapter extractReponsesAttendues pour gérer checkbox multiples
+  function extractReponsesAttendues(editor) {
+    const reponses = {};
+    // inputs texte + selects + checkbox
+    const inputs = editor.querySelectorAll(
+      "input.interactive-blank, select.interactive-select, input.interactive-checkbox"
+    );
+
+    // On regroupe les valeurs checkbox dans des tableaux, les autres champs en string
+    inputs.forEach((el) => {
+      const name = el.getAttribute("name");
+      if (!name) return;
+
+      if (el.type === "checkbox") {
+        if (!reponses[name]) reponses[name] = [];
+        if (el.checked) reponses[name].push(el.value);
+      } else {
+        reponses[name] = el.value || "";
+      }
+
+      // Met à jour attributs HTML pour conserver état
+      if (el.tagName.toLowerCase() === "input") {
+        el.setAttribute("value", el.value);
+        if (el.type === "checkbox") {
+          if (el.checked) el.setAttribute("checked", "checked");
+          else el.removeAttribute("checked");
+        }
+      } else if (el.tagName.toLowerCase() === "select") {
+        Array.from(el.options).forEach((opt) =>
+          opt.removeAttribute("selected")
+        );
+        if (el.selectedIndex >= 0) {
+          el.options[el.selectedIndex].setAttribute("selected", "selected");
+        }
+      }
+    });
+
+    return reponses;
+  }
+
+  // Sync avant submit (rien à changer ici, il gère bien les selects et inputs)
+  function syncEditorFieldsBeforeSubmit() {
+    editor.querySelectorAll("input.interactive-blank").forEach((input) => {
+      input.setAttribute("value", input.value);
+    });
+
+    editor
+      .querySelectorAll("input.interactive-checkbox")
+      .forEach((checkbox) => {
+        if (checkbox.checked) checkbox.setAttribute("checked", "checked");
+        else checkbox.removeAttribute("checked");
+      });
+
+    editor.querySelectorAll("select.interactive-select").forEach((select) => {
+      for (const option of select.options) option.removeAttribute("selected");
+      const selected = select.options[select.selectedIndex];
+      if (selected) selected.setAttribute("selected", true);
+    });
+  }
   function getUniqueFieldName() {
     return `field_${fieldCounter++}`;
   }

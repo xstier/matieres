@@ -4,6 +4,7 @@ from bson import ObjectId
 from bs4 import BeautifulSoup
 from extensions import mongo
 from admin_routes import admin
+from prof_routes import prof
 from auth import auth
 import json
 
@@ -22,6 +23,8 @@ mongo.init_app(app)
 
 app.register_blueprint(admin, url_prefix="/admin")
 app.register_blueprint(auth, url_prefix="/auth")
+app.register_blueprint(prof, url_prefix="/prof")
+
 
 # Raccourcis vers les collections
 db = mongo.db
@@ -83,7 +86,6 @@ def afficher_themes(matiere_id):
 
     no_content = not themes or all(not (theme["lessons"] or theme["exercises"]) for theme in themes)
 
-    matieres = list(matieres_col.find())
     return render_template(
         "index.html",
       
@@ -156,24 +158,26 @@ def afficher_theme(theme_id):
 @app.route("/lecon/<theme_nom>/<int:lecon_index>")
 def afficher_lecon(theme_nom, lecon_index):
     theme = themes_col.find_one({"nom": theme_nom})
-    if not theme or "lessons" not in theme or lecon_index >= len(theme["lessons"]):
-        flash("Leçon introuvable.")
+    
+    if not theme or "lessons" not in theme:
+        flash("Thème ou leçon introuvable.")
         return redirect(url_for("index"))
 
-    lecon = theme["lessons"][lecon_index]
-    return render_template("lecon.html", lecon=lecon)
+    lessons = theme["lessons"]
 
-@app.route("/lecon/<theme_id>/<titre>")
-def afficher_lecon_contenu(theme_id, titre):
-    theme = themes_col.find_one({"_id": ObjectId(theme_id)})
-    if not theme:
-        return "Thème introuvable", 404
+    if lecon_index < 0 or lecon_index >= len(lessons):
+        flash("Leçon introuvable")
+        return redirect(url_for("index"))
 
-    for lecon in theme.get("lessons", []):
-        if lecon["titre"] == titre and lecon.get("contenu"):
-            return render_template("lecon_contenu.html", lecon=lecon, theme=theme)
+    lecon = lessons[lecon_index]
 
-    return "Leçon introuvable ou sans contenu texte", 404
+    return render_template(
+        "lecon.html",
+        lecon=lecon,
+        theme_nom=theme_nom,
+        theme_id=str(theme["_id"]),
+        lecon_index=lecon_index
+    )
 
 @app.route("/exercice/<exercice_id>", methods=["GET", "POST"])
 def afficher_exercice(exercice_id):
@@ -182,7 +186,7 @@ def afficher_exercice(exercice_id):
         flash("Exercice non trouvé.")
         return redirect(url_for("index"))
 
-    # Chargement et parsing sécurisé des réponses attendues
+    # Chargement sécurisé des réponses attendues
     reponses_attendues = {}
     if "reponses_attendues" in exercice:
         try:
@@ -198,22 +202,36 @@ def afficher_exercice(exercice_id):
             user_answers = {}
             champs_non_remplis = []
 
-            # Lire uniquement les champs attendus (field_x)
-            for field_name in reponses_attendues:
-                valeur = request.form.get(field_name, "").strip()
-                if not valeur:
+            # Pour chaque champ attendu, récupérer toutes les valeurs POST (notamment pour checkbox multiples)
+            for field_name, expected_value in reponses_attendues.items():
+                valeurs = request.form.getlist(field_name)
+                if not valeurs or all(not v.strip() for v in valeurs):
                     champs_non_remplis.append(field_name)
-                user_answers[field_name] = valeur
+                user_answers[field_name] = valeurs if len(valeurs) > 1 else valeurs[0]
 
             if champs_non_remplis:
                 flash("Veuillez remplir tous les champs requis.", "warning")
                 return redirect(url_for("afficher_exercice", exercice_id=exercice_id))
 
-            # Comparaison exacte (insensible à la casse)
-            correct = all(
-                user_answers.get(field, "").lower() == expected.lower()
-                for field, expected in reponses_attendues.items()
-            )
+            # Vérification des réponses (insensible à la casse)
+            correct = True
+            for field, expected in reponses_attendues.items():
+                user_val = user_answers.get(field)
+                # Si la réponse attendue est une liste (checkbox multiples)
+                if isinstance(expected, list):
+                    if not isinstance(user_val, list):
+                        user_val = [user_val] if user_val else []
+                    # Vérifier que les réponses correspondent (mêmes éléments, sans ordre)
+                    if sorted([v.lower() for v in user_val]) != sorted([v.lower() for v in expected]):
+                        correct = False
+                        break
+                else:
+                    # Réponse simple (str)
+                    if isinstance(user_val, list):
+                        user_val = user_val[0] if user_val else ''
+                    if user_val.lower() != expected.lower():
+                        correct = False
+                        break
 
             if correct:
                 flash("Bravo, votre réponse est correcte !", "success")
@@ -223,24 +241,22 @@ def afficher_exercice(exercice_id):
             return redirect(url_for("afficher_exercice", exercice_id=exercice_id))
 
         else:
-          # Cas réponse libre : la réponse attendue est dans `reponse_html`
+            # Cas réponse libre
             reponse_libre = request.form.get("reponse_libre", "").strip()
             if not reponse_libre:
                 flash("Veuillez saisir une réponse.", "warning")
                 return redirect(url_for("afficher_exercice", exercice_id=exercice_id))
 
             bonne_reponse = exercice.get("reponse_html", "").strip()
-        if bonne_reponse:
-            if reponse_libre.lower() == bonne_reponse.lower():
-                flash("Bravo, votre réponse est correcte !", "success")
+            if bonne_reponse:
+                if reponse_libre.lower() == bonne_reponse.lower():
+                    flash("Bravo, votre réponse est correcte !", "success")
+                else:
+                    flash("Désolé, votre réponse est incorrecte.", "danger")
             else:
-                flash("Désolé, votre réponse est incorrecte.", "danger")
-        else:
-            # Aucun critère de validation défini
-            flash("Votre réponse a été enregistrée.", "info")
+                flash("Votre réponse a été enregistrée.", "info")
 
-
-    # Nettoyage du HTML avant affichage, pour éviter d'exposer les bonnes réponses
+    # Nettoyage du HTML avant affichage pour ne pas dévoiler les bonnes réponses
     exercice["reponse_html"] = nettoyer_reponse_html(exercice.get("reponse_html", ""))
 
     return render_template(
