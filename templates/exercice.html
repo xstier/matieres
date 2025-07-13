@@ -11,8 +11,8 @@
     action="{{ url_for('afficher_exercice', exercice_id=exercice._id) }}"
     novalidate
   >
-    {% if exercice.reponses_attendues and exercice.reponses_attendues | length >
-    0 %}
+    {% if exercice.reponses_attendues is mapping and exercice.reponses_attendues
+    | length > 0 %}
     <div id="reponse-interactive">{{ exercice.reponse_html | safe }}</div>
     {% else %}
     <div class="mb-3">

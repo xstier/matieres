@@ -1,0 +1,34 @@
+{% extends "base.html" %} {% block content %}
+<h2>Détails pour {{ eleve }} — Devoir : {{ devoir.titre }}</h2>
+
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Exercice</th>
+      <th>Score</th>
+      <th>Date</th>
+      <th>Réponses</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in resultats %}
+    <tr>
+      <td>{{ r.titre }}</td>
+      <td>{{ r.score }}/{{ r.total }}</td>
+      <td>{{ r.date.strftime("%d/%m/%Y %H:%M") if r.date }}</td>
+      <td>
+        <ul>
+          {% for champ, val in r.reponses.items() %}
+          <li><strong>{{ champ }}:</strong> {{ val }}</li>
+          {% endfor %}
+        </ul>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="{{ url_for('prof.resultats_devoir', devoir_id=devoir._id) }}"
+  >⬅ Retour au résumé</a
+>
+{% endblock %}

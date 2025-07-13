@@ -1,0 +1,61 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-4">
+  <h2>📚 Mes Devoirs Disponibles {{classe}}</h2>
+
+  <!-- Filtrage par mode -->
+  <div class="mb-3">
+    <strong>Filtrer par mode :</strong>
+    <a
+      href="{{ url_for('eleve.mes_devoirs') }}"
+      class="btn btn-outline-primary btn-sm {% if not mode %}active{% endif %}"
+      >Tous</a
+    >
+    <a
+      href="{{ url_for('eleve.mes_devoirs', mode='entrainement') }}"
+      class="btn btn-outline-success btn-sm {% if mode == 'entrainement' %}active{% endif %}"
+      >Entraînement</a
+    >
+    <a
+      href="{{ url_for('eleve.mes_devoirs', mode='controle') }}"
+      class="btn btn-outline-danger btn-sm {% if mode == 'controle' %}active{% endif %}"
+      >Contrôle</a
+    >
+  </div>
+
+  <!-- Liste des devoirs -->
+  {% if devoirs %}
+  <ul class="list-group">
+    {% for devoir in devoirs %}
+    <li
+      class="list-group-item d-flex justify-content-between align-items-center"
+    >
+      <div>
+        <strong>{{ devoir.titre }}</strong><br />
+        <small class="text-muted"
+          >Mode :
+          <span class="badge bg-secondary">{{ devoir.mode|capitalize }}</span>
+        </small>
+      </div>
+      {% if devoir.fait %}
+      <span class="text-success">
+        ✅ Devoir fait le {{ devoir.date_fait.strftime('%d/%m/%Y à %H:%M') if
+        devoir.date_fait else "Date inconnue" }}
+      </span>
+      {% else %}
+      <a
+        href="{{ url_for('eleve.faire_devoir', devoir_id=devoir._id) }}"
+        class="btn btn-sm btn-primary"
+        >Faire le devoir</a
+      >
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="alert alert-info mt-3">
+    Aucun devoir disponible pour votre classe{% if mode %} en mode
+    <strong>{{ mode }}</strong>{% endif %}.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

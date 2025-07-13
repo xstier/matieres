@@ -1,0 +1,31 @@
+{% extends "base.html" %} {% block content %}
+<h2>🧾 Résultats du devoir : {{ devoir.titre }}</h2>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Élève</th>
+      <th>Note</th>
+      <th>Détail</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for eleve, data in notes.items() %}
+    <tr>
+      <td>{{ eleve }}</td>
+      <td>
+        {{ (data.score / data.total * 20)|round(2) }} / 20
+        <small class="text-muted">({{ data.score }}/{{ data.total }})</small>
+      </td>
+      <td>
+        <a
+          href="{{ url_for('prof.resultats_eleve_devoir', devoir_id=devoir._id, eleve_username=eleve) }}"
+          class="btn btn-sm btn-outline-info"
+          >🔍 Voir détail</a
+        >
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

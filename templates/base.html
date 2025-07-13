@@ -34,43 +34,39 @@
         </ul>
       </nav>
       <div class="auth">
-        {% if session.get("admin") %}
-        <span class="welcome-msg me-3"
-          >Bienvenue Admin {{ session.get("username") }}</span
+        {% if session.get("username") %}
+        <span class="welcome-msg me-3">
+          Bienvenue {{session.get("role")}} {{ session.get("username") }}
+        </span>
+        <a
+          class="btn btn-outline-danger btn-sm"
+          href="{{ url_for('auth.logout') }}"
         >
+          Se déconnecter
+        </a>
+        {% endif %} {% if session.get("admin") %}
+
         <a
           class="btn btn-outline-primary btn-sm me-2"
           href="{{ url_for('admin.admin_home') }}"
-          >Panneau admin</a
         >
+          Panneau admin
+        </a>
+
+        {% elif session.get("role") == "eleve" %}
+
         <a
-          class="btn btn-outline-secondary btn-sm me-2"
-          href="{{ url_for('admin.list_matieres') }}"
-          >Matières</a
+          class="btn btn-outline-primary btn-sm me-2"
+          href="{{ url_for('eleve.home_eleve') }}"
+          >Accueil Eleve</a
         >
+
+        {% elif session.get("role") == "professeur" %}
+
         <a
-          class="btn btn-outline-secondary btn-sm me-2"
-          href="{{ url_for('admin.list_themes') }}"
-          >Thèmes</a
-        >
-        <a
-          class="btn btn-outline-success btn-sm me-2"
-          href="{{ url_for('admin.add_exercice_interactif') }}"
-          >Exercice interactif</a
-        >
-        <a
-          class="btn btn-outline-danger btn-sm"
-          href="{{ url_for('auth.logout') }}"
-          >Se déconnecter</a
-        >
-        {% elif session.get("username") %}
-        <span class="welcome-msg me-3"
-          >Bienvenue {{ session.get("username") }}</span
-        >
-        <a
-          class="btn btn-outline-danger btn-sm"
-          href="{{ url_for('auth.logout') }}"
-          >Se déconnecter</a
+          class="btn btn-outline-primary btn-sm me-2"
+          href="{{ url_for('prof.admin_prof') }}"
+          >Accueil Professeur</a
         >
         {% else %}
         <a

@@ -13,10 +13,12 @@
 
 body {
   background: #f9f9f9;
+  font-family: Arial, Helvetica, sans-serif;
   line-height: 1.6;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  border-radius: 4px;
 }
 
 /* Header */
@@ -129,9 +131,15 @@ form textarea {
   font-family: inherit;
   transition: border-color 0.3s ease;
 }
+form fieldset div {
+  display: flex;
+  flex-flow: row nowrap;
+  padding: 0.1rem;
+}
 
 form input[type="text"]:focus,
 form input[type="password"]:focus,
+form input[type="checkbox"]:focus,
 form select:focus,
 form textarea:focus {
   border-color: #004080;

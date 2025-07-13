@@ -22,23 +22,9 @@
     {% endif %} {% endwith %}
 
     <!-- Formulaire ajout -->
-    <h2>Ajouter un utilisateur</h2>
-    <form method="POST" style="margin-bottom: 2em">
-      <input type="hidden" name="action" value="add_user" />
-      <label>Nom :</label><br />
-      <input type="text" name="name" required /><br />
-      <label>Nom d'utilisateur :</label><br />
-      <input type="text" name="username" required /><br />
-      <label>Mot de passe :</label><br />
-      <input type="password" name="password" required /><br />
-      <label>Rôle :</label><br />
-      <select name="role">
-        <option value="eleve">Élève</option>
-        <option value="professeur">Professeur</option>
-        <option value="admin">Administrateur</option></select
-      ><br /><br />
-      <button type="submit">➕ Ajouter utilisateur</button>
-    </form>
+   
+   <a href = {{url_for('auth.register')}}>➕ Ajouter utilisateur</a>
+    
 
     <!-- Liste utilisateurs -->
     <h2>Liste des utilisateurs</h2>
@@ -48,6 +34,7 @@
           <th>Nom</th>
           <th>Nom d'utilisateur</th>
           <th>Rôle</th>
+          <th>Classe</th>
           <th>Date création</th>
           <th>Actions</th>
         </tr>
@@ -58,6 +45,7 @@
           <td>{{ user["name"] }}</td>
           <td>{{ user["username"] }}</td>
           <td>{{ user["role"] }}</td>
+          <td>{{ user["classe"] }}</td>
           <td>
             {{ user["created_at"].strftime('%Y-%m-%d %H:%M') if
             user.get("created_at") else '–' }}
@@ -98,6 +86,9 @@
     </table>
 
     <br />
-    <a href="{{ url_for('admin.admin_home') }}">← Retour à l’admin</a>
+
+    {% if session.get("role") == "admin" %}<a href="{{ url_for('admin.admin_home') }}">{% endif %}
+    {% if session.get("role") == "professeur" %}<a href="{{ url_for('prof.admin_prof') }}">{% endif %}
+      ← Retour à l’admin</a>
   </body>
 </html>

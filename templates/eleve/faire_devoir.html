@@ -1,0 +1,26 @@
+{% extends "base.html" %} {% block content %}
+<h2>{{ devoir.titre }}</h2>
+<p><strong>Mode :</strong> {{ devoir.mode|capitalize }}</p>
+
+<form method="POST">
+  {% for exo in exercices %}
+  <div class="exercice mb-4 p-3 border rounded">
+    <h3>Exercice {{ loop.index }} : {{ exo.titre }}</h3>
+
+    {# ✅ Afficher la question #}
+    <div class="mb-2">{{ exo.question }}</div>
+
+    {# ✅ Insérer le HTML des réponses #}
+    <div class="reponse-html mb-2">{{ exo.reponse_html_parsed | safe }}</div>
+
+    <hr />
+  </div>
+  {% endfor %}
+
+  <button type="submit" class="btn btn-primary">Envoyer mes réponses</button>
+</form>
+
+<a href="{{ url_for('eleve.mes_devoirs') }}" class="btn btn-secondary mt-3"
+  >⬅ Retour à mes devoirs</a
+>
+{% endblock %}

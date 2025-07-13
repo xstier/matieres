@@ -1,4 +1,5 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %} 
+{% block content %}
 <div class="container mt-4">
   <h2>Modifier le devoir</h2>
 
@@ -13,6 +14,31 @@
         required
       />
     </div>
+
+    <div class="mb-3">
+      <label for="mode" class="form-label">Mode du devoir</label>
+      <select class="form-select" name="mode" id="mode" required>
+        <option value="entrainement" {% if mode == 'entrainement' %}selected{% endif %}>
+          Entraînement
+        </option>
+        <option value="controle" {% if mode == 'controle' %}selected{% endif %}>
+          Contrôle
+        </option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+  <label for="classe_id" class="form-label">Classe assignée</label>
+  <select class="form-select" name="classe_id" required>
+    <option value="">-- Choisir une classe --</option>
+     {% for classe in classes %}
+      <option value="{{ classe }}" {% if devoir.classe_id == classe %}selected{% endif %}>
+        {{ classe }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
 
     <h4>Exercices sélectionnés</h4>
     {% for ex in exercices_selectionnes %}
@@ -66,9 +92,9 @@
     {% endfor %}
 
     <button type="submit" class="btn btn-success mt-3">Enregistrer</button>
-    <a href="{{ url_for('prof.liste_devoirs') }}" class="btn btn-secondary mt-3"
-      >Annuler</a
-    >
+    <a href="{{ url_for('prof.liste_devoirs') }}" class="btn btn-secondary mt-3">
+      Annuler
+    </a>
   </form>
 </div>
 {% endblock %}

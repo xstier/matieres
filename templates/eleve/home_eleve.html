@@ -1,0 +1,13 @@
+{% extends "base.html" %} {% block content %}
+<h2>Accueil Élève</h2>
+
+<ul>
+  <li><a href="{{ url_for('eleve.mes_devoirs') }}">Voir mes devoirs</a></li>
+  <li>
+    <a href="{{ url_for('eleve.consulter_resultats') }}"
+      >Consulter mes résultats</a
+    >
+  </li>
+  <li><a href="{{ url_for('auth.logout') }}">Se déconnecter</a></li>
+</ul>
+{% endblock %}

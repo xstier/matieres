@@ -4,5 +4,18 @@
 <ul>
   <li><a href="{{ url_for('prof.add_devoir') }}">Créer un devoir</a></li>
   <li><a href="{{ url_for('prof.liste_devoirs') }}">Voir les devoirs</a></li>
+  <li>
+    <a href="{{ url_for('admin.manage_users') }}">Gérer les utilisateurs</a>
+  </li>
+  <li>
+    <a href="{{ url_for('prof.selectionner_devoir_resultats') }}">
+      Consulter les résultats des devoirs</a
+    >
+  </li>
+  <li>
+    <a href="{{ url_for('auth.register') }}"
+      >Inscrire un élève ou un professeur</a
+    >
+  </li>
 </ul>
 {% endblock %}

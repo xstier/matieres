@@ -1,0 +1,13 @@
+{% extends "base.html" %} {% block content %}
+<h2>Sélectionner un devoir</h2>
+<ul>
+  {% for devoir in devoirs %}
+  <li>
+    <a href="{{ url_for('prof.resultats_devoir', devoir_id=devoir._id) }}">
+      {{ devoir.titre }}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+<a href="{{ url_for('prof.admin_prof') }}">⬅ Retour à l'accueil professeur</a>
+{% endblock %}

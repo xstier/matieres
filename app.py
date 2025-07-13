@@ -1,12 +1,7 @@
 import os
 from flask import Flask, redirect, url_for, session, render_template, flash, jsonify, request
-from bson import ObjectId
-from bs4 import BeautifulSoup
 from extensions import mongo
-from admin_routes import admin
-from prof_routes import prof
-from auth import auth
-import json
+
 
 app = Flask(__name__)
 app.secret_key = 'votre_cle_secrete'
@@ -19,11 +14,19 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Initialisation
 mongo.init_app(app)
 
+from bson import ObjectId
+from bs4 import BeautifulSoup
+from admin_routes import admin
+from prof_routes import prof
+from eleves_routes import eleve
+from auth import auth
+
 # Enregistrement des blueprints
 
 app.register_blueprint(admin, url_prefix="/admin")
 app.register_blueprint(auth, url_prefix="/auth")
 app.register_blueprint(prof, url_prefix="/prof")
+app.register_blueprint(eleve, url_prefix="/eleve")
 
 
 # Raccourcis vers les collections
@@ -186,23 +189,16 @@ def afficher_exercice(exercice_id):
         flash("Exercice non trouvé.")
         return redirect(url_for("index"))
 
-    # Chargement sécurisé des réponses attendues
-    reponses_attendues = {}
-    if "reponses_attendues" in exercice:
-        try:
-            if isinstance(exercice["reponses_attendues"], str):
-                reponses_attendues = json.loads(exercice["reponses_attendues"])
-            elif isinstance(exercice["reponses_attendues"], dict):
-                reponses_attendues = exercice["reponses_attendues"]
-        except Exception:
-            reponses_attendues = {}
+    # Pas besoin de json.loads ici, car le champ est déjà un dict
+    reponses_attendues = exercice.get("reponses_attendues", {})
+    if not isinstance(reponses_attendues, dict):
+        reponses_attendues = {}
 
     if request.method == "POST":
         if reponses_attendues:
             user_answers = {}
             champs_non_remplis = []
 
-            # Pour chaque champ attendu, récupérer toutes les valeurs POST (notamment pour checkbox multiples)
             for field_name, expected_value in reponses_attendues.items():
                 valeurs = request.form.getlist(field_name)
                 if not valeurs or all(not v.strip() for v in valeurs):
@@ -213,23 +209,19 @@ def afficher_exercice(exercice_id):
                 flash("Veuillez remplir tous les champs requis.", "warning")
                 return redirect(url_for("afficher_exercice", exercice_id=exercice_id))
 
-            # Vérification des réponses (insensible à la casse)
             correct = True
             for field, expected in reponses_attendues.items():
                 user_val = user_answers.get(field)
-                # Si la réponse attendue est une liste (checkbox multiples)
                 if isinstance(expected, list):
                     if not isinstance(user_val, list):
                         user_val = [user_val] if user_val else []
-                    # Vérifier que les réponses correspondent (mêmes éléments, sans ordre)
-                    if sorted([v.lower() for v in user_val]) != sorted([v.lower() for v in expected]):
+                    if sorted([v.lower().strip() for v in user_val]) != sorted([v.lower().strip() for v in expected]):
                         correct = False
                         break
                 else:
-                    # Réponse simple (str)
                     if isinstance(user_val, list):
                         user_val = user_val[0] if user_val else ''
-                    if user_val.lower() != expected.lower():
+                    if user_val.lower().strip() != expected.lower().strip():
                         correct = False
                         break
 
@@ -256,7 +248,6 @@ def afficher_exercice(exercice_id):
             else:
                 flash("Votre réponse a été enregistrée.", "info")
 
-    # Nettoyage du HTML avant affichage pour ne pas dévoiler les bonnes réponses
     exercice["reponse_html"] = nettoyer_reponse_html(exercice.get("reponse_html", ""))
 
     return render_template(
@@ -267,6 +258,7 @@ def afficher_exercice(exercice_id):
             "_id": str(exercice["_id"]),
         },
     )
+
 
 
 

@@ -1,0 +1,26 @@
+{% extends "base.html" %} {% block content %}
+<h2>Résultats du Devoir : {{ devoir.titre }}</h2>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Élève</th>
+      <th>Exercice</th>
+      <th>Score</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in resultats %}
+    <tr>
+      <td>{{ r.eleve_username }}</td>
+      <td>{{ r.exercice_titre }}</td>
+      <td>{{ r.score }}/{{ r.total }}</td>
+      <td>{{ r.date }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="{{ url_for('prof.admin_prof') }}">⬅ Retour à l'accueil professeur</a>
+{% endblock %}

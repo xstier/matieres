@@ -1,0 +1,27 @@
+{% extends "base.html" %} {% block content %}
+<h2>Résultat de l'entraînement</h2>
+<p>Score total : {{ total }} / {{ max }}</p>
+
+{% for res in details %}
+<div class="exercice-resultat">
+  <h3>{{ res.titre }}</h3>
+  <p>Score : {{ res.score }} / {{ res.total }}</p>
+
+  {% if res.erreurs %}
+  <ul>
+    {% for field, err in res.erreurs.items() %}
+    <li>
+      <strong>{{ field }} :</strong> attendu "{{ err.attendue }}", donné "{{
+      err.donnee }}"
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="success">Toutes les réponses sont correctes !</p>
+  {% endif %}
+</div>
+<hr />
+{% endfor %}
+
+<a href="{{ url_for('eleve.mes_devoirs') }}">⬅ Retour à mes devoirs</a>
+{% endblock %}
